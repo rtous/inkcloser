@@ -15,6 +15,10 @@ The InkCloser Dataset (55,000 pairs of corrupted and clean line art) is availabl
 - [`inkrepair_datasetgenerator_v2.ipynb`](inkrepair_datasetgenerator_v2.ipynb): builds the training dataset by removing line segments from clean line art and creating the train/test split.
 - [`lineartanimdata3_closer_v12.ipynb`](lineartanimdata3_closer_v12.ipynb): defines, trains and evaluates the InkCloser model.
 
+## Pretrained weights
+
+The trained weights used in the paper are publicly available [here](https://drive.google.com/file/d/1li1ZjYNWHQfcrC2lq19JLoKHxM9KuW77/view?usp=drive_link). They are also linked from [`lineartanimdata3_closer_v12.ipynb`](lineartanimdata3_closer_v12.ipynb) (code block 13b, "RESTORE CHECKPOINT"), which downloads and restores them.
+
 ## Paper
 
 If you use this code, please cite:
