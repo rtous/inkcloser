@@ -13,7 +13,11 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from inkcloser.data import load_split  # noqa: E402  (also usable from other scripts)
 
 DRIVE_URL = "https://drive.google.com/file/d/1NO8i_J5mSlh7YYuwh2ZyFqkIW7ISrGuk/view?usp=drive_link"
 DEFAULT_ZIP = "/content/inkrepair_dataset.zip"
@@ -42,27 +46,6 @@ def unpack(local_zip, split_root, keep_zip=False):
     if not keep_zip:
         os.remove(local_zip)  # free disk space
     print(f"unzipped in {time.perf_counter() - t0:.0f} s -> {split_root}")
-
-
-def load_split(split_root):
-    """Restore paths, file lists and IMAGE_SIZE from split.json (also usable from other scripts)."""
-    with open(os.path.join(split_root, "split.json")) as fh:
-        manifest = json.load(fh)
-    pre_root = os.path.join(split_root, "precorrupted")
-    return {
-        "IMAGE_SIZE": manifest["image_size"],
-        "train_files": manifest["train"],
-        "test_files": manifest["test"],
-        "sample_files": manifest["sample"],
-        "test_clean_dir": os.path.join(split_root, "clean_test"),
-        "test_corr_dir": os.path.join(split_root, "corrupted_test"),
-        "pre_root": pre_root,
-        "pre_clean": os.path.join(pre_root, "clean"),
-        "pre_corr": os.path.join(pre_root, "corrupted"),
-        # clean_training/ held symlinks and was excluded from the zip. The same
-        # images, already resized to IMAGE_SIZE, are in precorrupted/clean.
-        "train_dir": os.path.join(pre_root, "clean"),
-    }
 
 
 def check(s):
