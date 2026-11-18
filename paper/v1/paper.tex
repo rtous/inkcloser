@@ -696,6 +696,117 @@ slightly differently, the comparison is only approximate, but it indicates that 
 model is roughly an order of magnitude more expensive, a cost that remains small
 compared with that of manual gap repair.
 
+\section{Ablation Study}
+\label{sec:ablation}
+
+To assess the contribution of the individual components of InkCloser, we trained
+seven variants under an identical reduced schedule and evaluated them with the
+protocol of Section~\ref{sec:metrics} on the same 1\,000 test images. Each variant
+removes one component, or several, from the full model:
+\begin{itemize}
+\item \emph{w/o 28$\times$28 attention}: the six bottleneck transformer blocks are
+  removed, and the bottleneck features go directly to the decoder.
+\item \emph{w/o 56$\times$56 branch}: the dilated residual stack and the three
+  transformer blocks on the $56\times 56$ skip connection are removed.
+\item \emph{w/o gated conv}: every gated convolution of the encoder is replaced by a
+  standard convolution with the same kernel size, stride, and number of channels.
+\item \emph{w/o local (gap) Dice}: the gap Dice term is removed from the loss
+  ($\beta_{\mathrm{gap}} = 0$).
+\item \emph{Plain U-Net + our loss}: the U-Net alone, with standard convolutions and
+  without either context module, trained with the full loss.
+\item \emph{Plain U-Net + BCE}: the same network trained with an unweighted binary
+  cross-entropy only ($\lambda_h = 1$, $\beta_{\mathrm{dice}} = \beta_{\mathrm{gap}} = 0$).
+\end{itemize}
+Removed modules are replaced by the identity, so the rest of the network (encoder,
+skip connections, decoder, and head) is unchanged. To keep the cost of the study
+manageable, every variant, including the full model, is trained for one epoch
+(2\,250 steps) instead of five, with the optimizer, learning rates, learning-rate
+schedule, augmentation, and random seed of Section~\ref{sec:method}. The absolute
+values in Table~\ref{tab:ablation} are therefore lower than those of the reported
+model, which is listed in the last row for reference; the comparison of interest is
+between the full model and each variant trained under the same budget. Differences
+are tested with the same paired bootstrap as in Section~\ref{sec:results}, against
+the full model trained for one epoch.
+
+\begin{table}[t]
+\centering
+\caption{Ablation study on the held-out test set (1\,000 images, 26\,141 erased
+segments). All variants except the last row are trained for one epoch (2\,250 steps)
+with otherwise identical settings. The last row is the reported model (five epochs,
+Table~\ref{tab:main_results}). Values are percentages unless noted; $\pm$ is half the
+width of the 95\% bootstrap confidence interval. Best value among the one-epoch
+variants in bold.}
+\label{tab:ablation}
+\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccccccc}
+\toprule
+Variant & \shortstack{Params\\(M)} & \shortstack{Fill F1\\($\tau$=0) $\uparrow$} & \shortstack{Fill F1\\($\tau$=2) $\uparrow$} & \shortstack{Gap\\closure $\uparrow$} & \shortstack{Bucket\\acc. $\uparrow$} & \shortstack{Leaks /\\image $\downarrow$} & \shortstack{Leak-free\\images $\uparrow$} \\
+\midrule
+InkCloser (full) & 43.4 & \textbf{76.6}{\scriptsize$\pm$0.7} & 91.5{\scriptsize$\pm$0.5} & 42.2{\scriptsize$\pm$1.0} & 90.0{\scriptsize$\pm$0.7} & 3.49{\scriptsize$\pm$0.30} & 26.9{\scriptsize$\pm$2.8} \\
+w/o 28$\times$28 attention & 24.4 & 76.4{\scriptsize$\pm$0.7} & \textbf{91.9}{\scriptsize$\pm$0.5} & \textbf{44.1}{\scriptsize$\pm$1.1} & \textbf{91.3}{\scriptsize$\pm$0.6} & \textbf{2.81}{\scriptsize$\pm$0.26} & \textbf{32.4}{\scriptsize$\pm$2.8} \\
+w/o 56$\times$56 branch & 35.1 & 76.3{\scriptsize$\pm$0.7} & 91.8{\scriptsize$\pm$0.5} & 38.8{\scriptsize$\pm$0.9} & 90.5{\scriptsize$\pm$0.6} & 3.31{\scriptsize$\pm$0.28} & 26.4{\scriptsize$\pm$2.7} \\
+w/o gated conv & 37.4 & 69.5{\scriptsize$\pm$0.8} & 86.3{\scriptsize$\pm$0.6} & 41.2{\scriptsize$\pm$1.0} & 87.5{\scriptsize$\pm$0.8} & 4.26{\scriptsize$\pm$0.36} & 21.2{\scriptsize$\pm$2.5} \\
+w/o local (gap) Dice & 43.4 & 71.6{\scriptsize$\pm$0.9} & 87.4{\scriptsize$\pm$0.7} & 31.0{\scriptsize$\pm$1.0} & 85.0{\scriptsize$\pm$0.9} & 5.60{\scriptsize$\pm$0.44} & 14.7{\scriptsize$\pm$2.2} \\
+Plain U-Net + our loss & 10.2 & 67.9{\scriptsize$\pm$0.8} & 85.9{\scriptsize$\pm$0.6} & 27.3{\scriptsize$\pm$0.8} & 84.8{\scriptsize$\pm$0.9} & 5.52{\scriptsize$\pm$0.42} & 11.5{\scriptsize$\pm$1.9} \\
+Plain U-Net + BCE & 10.2 & 66.1{\scriptsize$\pm$0.9} & 85.5{\scriptsize$\pm$0.7} & 18.6{\scriptsize$\pm$0.9} & 77.8{\scriptsize$\pm$1.2} & 8.71{\scriptsize$\pm$0.76} & 10.4{\scriptsize$\pm$1.8} \\
+\midrule
+\emph{InkCloser (reported, five epochs)} & 43.4 & 78.5{\scriptsize$\pm$0.7} & 92.8{\scriptsize$\pm$0.5} & 70.5{\scriptsize$\pm$0.9} & 94.7{\scriptsize$\pm$0.4} & 1.47{\scriptsize$\pm$0.14} & 45.0{\scriptsize$\pm$3.0} \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\paragraph{Loss function.} The gap Dice term is the component whose removal has the
+largest effect. Without it, gap closure drops from 42.2\% to 31.0\% (11.2 percentage
+points, 95\% CI [10.6, 11.8]), bucket accuracy from 90.0\% to 85.0\%, and the share of
+leak-free images from 26.9\% to 14.7\%, while the number of leaks per image rises from
+3.49 to 5.60. Its fill F1 also decreases by 5.0 points. This is consistent with the
+motivation of the term: the global loss terms are dominated by the intact parts of
+the drawing, and the gap Dice term adds a training signal that is specific to the
+completed regions. The loss also matters without the context modules: on the plain
+U-Net, replacing the unweighted cross-entropy with our loss raises gap closure from
+18.6\% to 27.3\% and bucket accuracy from 77.8\% to 84.8\%, and lowers the number of
+leaks per image from 8.71 to 5.52.
+
+\paragraph{Gated convolutions.} Replacing the gated convolutions with standard ones
+reduces fill F1 by 7.1 points at $\tau=0$ (from 76.6\% to 69.5\%) and by 5.2 points at
+$\tau=2$, bucket accuracy by 2.5 points, and the share of leak-free images by 5.7
+points (paired bootstrap $p \le 0.001$ for fill F1 at $\tau=0$, bucket accuracy, and
+leak-free images). Gap closure decreases less, by 1.0 point (95\% CI [0.4, 1.7]). The variant without gates thus closes almost as many gaps, but the ink it
+adds is less accurate. We attribute this to the role of the gates in separating
+reliable input from the gaps, which lets the network copy intact strokes and place new
+ink more precisely; this interpretation is consistent with, but not proven by, these
+results.
+
+\paragraph{Context modules.} Removing the $56\times 56$ branch reduces gap closure by
+3.4 points (95\% CI [2.8, 4.0]), while its other metrics stay close to those of the
+full model, which suggests that the branch mainly helps the network complete gaps
+rather than reproduce the rest of the drawing. Removing the $28\times 28$ bottleneck
+attention, in contrast, does not degrade the results at this training budget: the
+variant without it is slightly but significantly better than the full model in gap
+closure (+1.9 points), bucket accuracy (+1.3 points), and leak-free images (+5.5
+points), with no significant difference in fill F1. We therefore cannot claim a
+benefit of the bottleneck attention from this study. Two factors may contribute to
+this result, neither of which we have tested: the variant without bottleneck
+attention still has access to image-wide context through the transformer blocks of
+the $56\times 56$ branch, and the six bottleneck transformer blocks, which account for
+almost half of the parameters of the model (19\,M of 43.4\,M), may need a longer
+schedule than one epoch to contribute. A comparison of the two configurations under
+the full training schedule is left for future work.
+
+\paragraph{Architecture as a whole.} Taken together, the components of InkCloser
+improve every metric of the plain U-Net trained with the same loss: gap closure rises
+from 27.3\% to 42.2\%, fill F1 from 67.9\% to 76.6\%, bucket accuracy from 84.8\% to
+90.0\%, and the share of leak-free images from 11.5\% to 26.9\% ($p \le 0.001$ for all
+four). Relative to the plain U-Net trained with cross-entropy, the combination of our
+architecture and loss more than doubles gap closure (from 18.6\% to 42.2\%) under the
+same budget. The reported model, trained five times longer, reaches a much higher gap
+closure (70.5\%) than the full model trained for one epoch (42.2\%), while its fill F1
+at $\tau=2$ differs by only 1.3 points; this suggests that the structural metrics
+benefit most from longer training, and that the ranking of the variants could change
+under the full schedule, in particular for components whose effect at one epoch is
+small.
+
 \section{Discussion and Future Work}
 \label{sec:discussion}
 
