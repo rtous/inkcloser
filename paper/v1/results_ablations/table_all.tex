@@ -1,0 +1,29 @@
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lcccccccc}
+\toprule
+Metric & InkCloser (full) & w/o 28×28 attention & w/o 56×56 branch & w/o gated conv & w/o local (gap) Dice & Plain U-Net + our loss & Plain U-Net + BCE & InkCloser (released, paper) \\
+\midrule
+Fill P ($\tau$=0) $\uparrow$ & 82.1 & 81.1 & 83.8 & 71.9 & 85.5 & 81.3 & 86.0 & 73.6 \\
+Fill R ($\tau$=0) $\uparrow$ & 71.7 & 72.3 & 70.1 & 67.2 & 61.6 & 58.2 & 53.7 & 84.0 \\
+Fill F1 ($\tau$=0) $\uparrow$ & 76.6 & 76.4 & 76.3 & 69.5 & 71.6 & 67.9 & 66.1 & 78.5 \\
+Fill P ($\tau$=2) $\uparrow$ & 95.2 & 94.6 & 96.1 & 88.5 & 97.1 & 94.6 & 96.7 & 91.7 \\
+Fill R ($\tau$=2) $\uparrow$ & 88.1 & 89.4 & 87.8 & 84.1 & 79.4 & 78.7 & 76.7 & 93.9 \\
+Fill F1 ($\tau$=2) $\uparrow$ & 91.5 & 91.9 & 91.8 & 86.3 & 87.4 & 85.9 & 85.5 & 92.8 \\
+Pixel IoU $\uparrow$ & 98.6 & 98.6 & 98.6 & 98.1 & 98.5 & 98.3 & 98.2 & 98.6 \\
+Pixel F1 $\uparrow$ & 99.3 & 99.3 & 99.3 & 99.1 & 99.2 & 99.1 & 99.1 & 99.3 \\
+Ink kept $\uparrow$ & 100.0 & 100.0 & 100.0 & 100.0 & 100.0 & 100.0 & 100.0 & 100.0 \\
+Ink ratio $\to 1$ & 0.996 & 0.997 & 0.995 & 0.998 & 0.991 & 0.991 & 0.988 & 1.004 \\
+Gap closure $\uparrow$ & 42.2 & 44.1 & 38.8 & 41.2 & 31.0 & 27.3 & 18.6 & 70.5 \\
+Region count acc. $\uparrow$ & 27.0 & 30.8 & 25.5 & 19.7 & 14.8 & 13.4 & 12.2 & 38.1 \\
+Region recovery $\uparrow$ & 79.8 & 85.3 & 80.8 & 76.9 & 65.1 & 66.8 & 49.0 & 94.0 \\
+Bucket acc. (IoU$\geq$0.9) $\uparrow$ & 90.0 & 91.3 & 90.5 & 87.5 & 85.0 & 84.8 & 77.8 & 94.7 \\
+Mean region IoU $\uparrow$ & 93.0 & 94.1 & 93.3 & 91.3 & 89.1 & 89.2 & 83.3 & 96.5 \\
+Leaks / image $\downarrow$ & 3.487 & 2.805 & 3.305 & 4.264 & 5.602 & 5.521 & 8.708 & 1.467 \\
+Leak-free images $\uparrow$ & 26.9 & 32.4 & 26.4 & 21.2 & 14.7 & 11.5 & 10.4 & 45.0 \\
+\bottomrule
+\end{tabular}
+\caption{All metrics on the test set (percentages unless noted; 95\% CIs in \texttt{main\_table\_with\_ci.csv}).}
+\label{tab:all_results}
+\end{table}

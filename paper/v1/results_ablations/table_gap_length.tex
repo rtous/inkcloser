@@ -1,0 +1,16 @@
+\begin{table}
+\caption{Gap closure rate (\%) by erased-segment length (longest side of its bounding box, px). A gap is closed if $\geq$80\% of its pixels are redrawn.}
+\label{tab:gap_length}
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+ & \# gaps & InkCloser (full) & w/o 28×28 attention & w/o 56×56 branch & w/o gated conv & w/o local (gap) Dice & Plain U-Net + our loss & Plain U-Net + BCE & InkCloser (released, paper) \\
+Gap length (px) &  &  &  &  &  &  &  &  &  \\
+\midrule
+$<$8 & 5147 & 23.1 & 28.5 & 24.1 & 23.3 & 17.7 & 17.5 & 8.1 & 44.5 \\
+8--16 & 11141 & 44.9 & 47.3 & 40.7 & 47.2 & 34.2 & 32.3 & 24.2 & 76.6 \\
+16--32 & 7612 & 47.4 & 48.1 & 42.1 & 44.3 & 35.0 & 28.4 & 18.3 & 76.9 \\
+32--64 & 2226 & 55.2 & 50.8 & 51.7 & 41.7 & 31.9 & 21.0 & 16.3 & 77.9 \\
+$\geq$64 & 15 & 33.3 & 33.3 & 40.0 & 6.7 & 20.0 & 13.3 & 20.0 & 80.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
