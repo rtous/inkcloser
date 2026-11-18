@@ -1,0 +1,33 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[hidelinks]{hyperref}
+\pagestyle{empty}
+\begin{document}
+\begin{center}
+{\Large\bfseries InkCloser: Line-Art Completion for Paint-Bucket Colorization\par}
+\vspace{1em}
+Ruben Tous\\
+Computer Architecture Department, Universitat Polit\`ecnica de Catalunya, Barcelona, Spain\\
+\texttt{ruben.tous@upc.edu}
+\end{center}
+\vspace{1.5em}
+\noindent\textbf{Abstract}\par\medskip
+\noindent Flood-fill (paint-bucket) coloring of line art requires the line drawing to form closed
+regions. In practice, line art produced by drawing, scanning, or automatic line extraction
+often contains small gaps, and a single gap lets the fill leak across the intended
+boundary. We address the problem of restoring such gaps so that a
+standard flood-fill tool can be applied without manual retouching. Unlike conventional
+image inpainting, the location of the missing content is not available at inference
+time. We present InkCloser, a U-Net with gated convolutions, a dilated
+context stack, and transformer self-attention at two resolutions. We train it on pairs
+built by synthetically removing segments of ink from a collection of clean, closed line-art
+images, with a loss that combines pixel-wise cross-entropy, a global Dice term, and
+a Dice term restricted to the neighborhood of the removed segments.
+We also introduce evaluation metrics that measure gap closing and paint-bucket
+behavior directly, rather than relying on pixel accuracy. On a held-out test set, the model closes 70.5\% of the gaps, raises the fraction of
+regions that a single bucket click fills correctly (bucket accuracy) from 64.1\% to 94.7\%, reduces
+the number of fill leaks per image from 15.5 to 1.5, and makes 45.0\% of the drawings
+entirely leak-free. Code, pretrained weights and data are available at \url{https://github.com/rtous/inkcloser}.
+\end{document}

@@ -1,0 +1,27 @@
+CONTEXT FOR POLISHING "InkCloser" (paper.tex / references.bib)
+
+These are author decisions and known facts that are NOT stated in the paper. Respect them: do not "fix" them, do not add text that contradicts them, and do not add text that reveals the ones marked CONFIDENTIAL.
+
+A. DATA REPRESENTATION (CONFIDENTIAL)
+1. The source images and all stored clean/corrupted images are binary (0/255). The author does not want the paper to call the data "binary" or "anti-aliased", because it could be read as a limitation. Do not add either word anywhere.
+2. Exception, kept on purpose: Section 3 defines Y in {0,1}^{H x W}. Keep it exactly as it is, and do not change it to [0,1].
+3. Neutral wording is intentional: "monochrome line-art images" (Dataset), and "since they are specks rather than paintable regions" (Metrics), not "anti-aliasing specks". Keep both.
+4. Training pairs have soft edges because of bilinear augmentation, and that is why the hole indicator uses thresholds (X > 0.9, Y < 0.5). This is not explained in the paper and should stay unexplained.
+5. The source images are already 896x896, so "Each image is resized to 896x896" is effectively a no-op. Keep the sentence as it is.
+
+B. TRAINING LENGTH AND SCHEDULE
+6. The reported model was trained for 5 epochs (11,250 steps). The paper states 5 epochs.
+7. The cosine schedule was configured for 30 epochs (T_max = 30, eta_min = 1e-6) but training stopped after 5, so the learning rate barely decayed. The paper only says "decayed with a cosine annealing schedule". Do NOT add "down to 1e-6", the 30-epoch configuration, or any claim that the schedule completed. The author chose not to explain the truncated schedule.
+8. The public training notebook still says epochs = 30. The author will update it later. Do not mention this in the paper.
+
+C. MODEL SELECTION AND VALIDATION (do not add claims)
+9. There is no separate validation split. During training, the test set was evaluated at the end of every epoch, for monitoring. The hole weight (lambda_h = 3 instead of 8) came from "preliminary experiments". Do NOT write that no test data was used for model selection or tuning of OUR model. (The paper says this only for the retrained Sasaki baseline, where it is true.)
+10. Do not add a validation-split description or any early-stopping claim.
+
+D. NO ABLATIONS
+11. No ablation study exists. All statements about why the model works must stay hedged ("we attribute this to", "is consistent with"). Do not strengthen them into causal claims ("shows that", "thanks to").
+12. The author removed ablations from the future-work list. Do not add an ablation section or list ablations as future work, unless the author asks.
+
+E. AUTHORSHIP, LINKS, REFERENCES
+20. The author name is written "Ruben Tous", without an accent, everywhere (author block and bib). The university is "Universitat Polit\`ecnica de Catalunya", with the accent.
+

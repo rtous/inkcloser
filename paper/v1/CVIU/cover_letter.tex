@@ -1,0 +1,77 @@
+% Cover letter -- InkCloser, submission to Computer Vision and Image Understanding
+% Compile: pdflatex cover_letter.tex
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{parskip}
+\usepackage[hidelinks]{hyperref}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{flushright}
+Ruben Tous\\
+Computer Architecture Department\\
+Universitat Polit\`ecnica de Catalunya\\
+Barcelona, Spain\\
+\href{mailto:ruben.tous@upc.edu}{ruben.tous@upc.edu}\\[0.8em]
+\today
+\end{flushright}
+
+Editor-in-Chief\\
+\emph{Computer Vision and Image Understanding}
+
+Dear Editor,
+
+I am pleased to submit the manuscript entitled \textbf{``InkCloser: Line-Art Completion
+for Paint-Bucket Colorization''} for consideration as a research article in
+\emph{Computer Vision and Image Understanding}.
+
+Flood-fill (paint-bucket) coloring, the standard way of coloring line art in
+illustration and 2D animation, only works when the drawing forms closed regions; a
+single gap in a stroke makes the fill leak into the neighboring region. The manuscript
+addresses the restoration of such gaps as a \emph{mask-free} problem: unlike
+conventional inpainting, the location of the missing ink is unknown at inference time,
+so the network must find the gaps, close them, and leave intentional stroke endings and
+the rest of the drawing untouched.
+
+The main contributions are:
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item a U-Net with gated convolutions, a dilated context stack, and transformer
+  self-attention at two resolutions, designed to locate and bridge gaps without a mask;
+\item a loss that combines hole-weighted cross-entropy with global and gap-local Dice
+  terms;
+\item evaluation metrics that measure gap closure and simulate the paint-bucket tool
+  (bucket accuracy and fill leaks), rather than relying on pixel accuracy;
+\item a public dataset of 55\,000 corrupted and clean line-art pairs, together with the
+  code and pretrained weights.
+\end{itemize}
+
+On a held-out test set of 1\,000 drawings, the model closes 70.5\% of the gaps, raises
+the fraction of regions that a single bucket click fills correctly from 64.1\% to
+94.7\%, reduces fill leaks per image from 15.5 to 1.5, and makes 45.0\% of the drawings
+entirely leak-free. Morphological closing and the joint gap detection and inpainting
+network of Sasaki et al.\ (CVPR 2017), even when retrained on the same data, do not
+improve on the bucket accuracy of the unrestored input.
+
+I believe the work fits the scope of \emph{Computer Vision and Image Understanding}, as
+it addresses image restoration and structural understanding of line drawings, with an
+evaluation protocol tied to a concrete downstream task, and it is relevant to the
+growing body of work on learning-based tools for illustration and animation.
+
+I confirm that this manuscript is original, has not been published previously, and is
+not under consideration for publication elsewhere. I am the sole author and approve the
+submitted version. I have no competing interests to declare. The code, pretrained
+weights, and dataset are publicly available at
+\url{https://github.com/rtous/inkcloser}.
+% Optional, if the PDF remains in the repository:
+% A preprint of the manuscript is available in the same repository.
+
+Thank you for your time and consideration.
+
+Sincerely,\\[1.2em]
+Ruben Tous\\
+Universitat Polit\`ecnica de Catalunya
+
+\end{document}

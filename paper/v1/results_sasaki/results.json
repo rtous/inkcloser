@@ -1,0 +1,28 @@
+{
+  "identity (corrupted input)": {
+    "fill_precision": 0.0,
+    "fill_recall": 0.0,
+    "fill_f1": 0.0,
+    "ink_kept": 1.0,
+    "px_f1": 0.9838832665449384,
+    "ink_ratio": 0.9682777914693709,
+    "region_acc": 0.001,
+    "region_recovery": 0.0,
+    "regions_pred": 37.967,
+    "regions_gt": 53.425,
+    "seconds": 59.121658206999996
+  },
+  "Sasaki17 pretrained, scale 1": {
+    "fill_precision": 0.10670114091303677,
+    "fill_recall": 0.5399089317619068,
+    "fill_f1": 0.1781874469409785,
+    "ink_kept": 0.9510711447701956,
+    "px_f1": 0.9013366546527335,
+    "ink_ratio": 1.0814157872468522,
+    "region_acc": 0.055,
+    "region_recovery": 0.6057057834131194,
+    "regions_pred": 47.412,
+    "regions_gt": 53.425,
+    "seconds": 59.94840363700001
+  }
+}

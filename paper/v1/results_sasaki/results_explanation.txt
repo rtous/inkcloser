@@ -1,0 +1,191 @@
+PAPER_RESULTS_SASAKI FOLDER: CONTENTS AND HOW TO READ THEM
+
+CONTEXT
+
+This folder holds the evaluation of a competing method, Sasaki et al. 2017, "Joint Gap Detection and Inpainting of Line Drawings" (CVPR). It is evaluated on the same task, test set and metrics as the proposed method, whose results are in a separate folder named paper_results. The two folders are designed to be merged into one comparison.
+
+Task setup:
+
+The task is to restore broken lines in binary (black and white) line-art cartoon images, so that the paint-bucket colouring tool works. That tool floods a closed white region, so any gap in an outline makes the colour spill into neighbouring regions.
+The model receives an image whose lines have holes and outputs the complete drawing. It is NOT told where the holes are.
+Test pairs come from a frozen, held-out split. The holes were erased artificially from clean ground-truth drawings, and the corrupted test images are stored on disk, so every method, in both folders, sees exactly the same holes.
+
+The Sasaki method:
+
+A fully convolutional encoder-decoder network with no skip connections. It is trained to complete the lines of a drawing directly, without being given a mask of the missing parts.
+The official release is for Torch7/Lua, which does not run on Colab. Its released weights (.t7 file) were converted layer by layer into an identical PyTorch network. The field arch_source in summary.json records whether the exact official architecture was used ("official .t7 (exact)") or an approximate fallback rebuilt by hand ("fallback (approximate)"). Only the exact version should be reported as Sasaki et al.
+Input pre-processing and output post-processing follow the authors' main.lua. The input is normalised with the model's stored mean and standard deviation and padded with white to a multiple of 16. The output goes through their sharpening step, which never changes which pixels count as ink at the 0.5 threshold.
+The output is a probability map, binarized at 0.5 for all metrics, exactly as for the proposed method.
+METHODS IN THIS FOLDER
+
+Every table has one row (or column) per method:
+
+"Input (no restoration)": the corrupted image evaluated as if it were the output. This is the lower bound. It adds no ink, so fill precision and fill F1 are undefined for it (shown as "--" or blank).
+"Closing (k=5)" and "Closing (k=9)": morphological closing of the ink mask (dilation then erosion) with an elliptical kernel of diameter k pixels. This is the classical mask-free way to close gaps. It can only bridge gaps shorter than about k pixels, and it fills narrow white areas and corners.
+"Sasaki17 pretrained (scale s)": the official released weights applied zero-shot, with no training on this dataset.
+The only thing adjusted is the resolution the network runs at. The image is resized by factor s, processed, and resized back, which roughly matches the line widths the model was trained on.
+s = 1 is always reported.
+A second scale, BEST_SCALE, was chosen on 64 TRAINING images using the metric named in summary.json (tune_metric), never on test images. It appears as its own row when it differs from 1.
+"Sasaki17 retrained (init, loss, optim)": Sasaki's architecture trained on the same training pairs and augmentation as the proposed method. The label says how it was trained:
+init: "scratch" (random initialisation) or "pretrained" (fine-tuned from the official weights).
+loss: "mse" (the plain mean-squared-error loss from Sasaki's paper) or "lineloss" (the proposed method's loss, so only the architecture differs).
+optim: "adadelta" (as in the paper) or "adamw".
+Training used random 448x448 crops; evaluation runs on full test images.
+The LAST epoch is reported, so no model was chosen by looking at test results.
+There is one row per training run found.
+
+The method marked as focus in summary.json (by default the retrained run) is the one shown in the error maps and failure-case figures.
+
+The Input and Closing rows must be IDENTICAL to the same rows in the paper_results folder of the proposed method. If they are, both notebooks used the same test pairs and the same metric code, and the numbers in the two folders can be compared directly.
+
+CONVENTIONS (identical to the paper_results folder)
+A pixel is ink if its value is below 0.5, on images scaled to [0, 1] where 0 is black.
+A region is a 4-connected white area. Using 4-connectivity for the background pairs correctly with 8-connected ink. White regions under 20 pixels are ignored because they are anti-aliasing specks.
+Metrics are pooled over the whole test set (micro average): counts are summed over all images first and the ratio is taken once.
+Confidence intervals are 95% percentile bootstrap intervals over test images (1000 resamples, seed 0). The same resamples are used for every method, which makes the comparisons paired. Because the seed and the test images are the same in both folders, bootstrap results from the two folders can also be combined.
+Percent metrics appear in the tables as percentages with one decimal. In the CSV and JSON files they are fractions between 0 and 1.
+METRICS (same definitions as the paper_results folder)
+
+Fill metrics measure only the ink a method ADDS: pixels that are ink in the output but not in the input. They are computed at pixel tolerance tau = 0 (exact) and tau = 2 (within 2 pixels).
+
+Fill P (precision): the share of added ink that lies on a true line (within tau).
+Fill R (recall): the share of erased ink that was redrawn (within tau).
+Fill F1: the harmonic mean of Fill P and Fill R.
+
+Pixel metrics cover all ink in the image:
+
+Pixel IoU and Pixel F1: overlap between output ink and ground-truth ink.
+Ink kept: the share of the input's ink that is still ink in the output.
+Ink ratio: output ink divided by ground-truth ink. 1 is ideal; above 1 means lines are too thick or there is spurious ink; below 1 means ink is missing.
+
+Gap metric:
+
+An erased segment is one 8-connected component of the ground-truth ink that is missing from the input, ignoring components under 4 pixels.
+A segment counts as closed if at least 80% of its pixels are ink in the output.
+Gap closure: the share of erased segments that are closed.
+Gap length is the longest side of the segment's bounding box, in pixels.
+
+Region and paint-bucket metrics (the most relevant for the application):
+
+Region count acc.: the share of images whose output has exactly the ground-truth number of closed regions.
+Region recovery: the share of regions merged by the holes that the output separates again.
+Bucket acc. (IoU≥0.9): each ground-truth region is matched to the output region that overlaps it best (by IoU). The metric is the share of ground-truth regions whose best match has IoU of at least 0.9, which approximates the regions a user could fill correctly with one bucket click.
+Mean region IoU: the average of that best-match IoU over all ground-truth regions.
+Leak: one output region that contains at least 50% of each of two or more ground-truth regions, meaning a bucket fill would spill across them. Each output region counts (number of ground-truth regions it absorbs minus 1) leaks.
+Leaks / image: the average number of leaks per image. Lower is better.
+Leak-free images: the share of images with zero leaks, meaning the drawing is fully ready to colour.
+
+Arrows used in the LaTeX tables: ↑ means higher is better, ↓ means lower is better, →1 means closest to 1 is best.
+
+FILES
+
+table_main.tex
+
+The main LaTeX table. Rows are methods; columns are Fill P, Fill R and Fill F1 at tau=0, Fill F1 at tau=2, Pixel F1, Ink ratio, Gap closure, Bucket acc., Leaks / image and Leak-free images.
+Each cell shows the value followed by a small "±" with half the width of the 95% bootstrap interval.
+The best value in each column, among the methods in THIS folder only, is in bold.
+Label: tab:sasaki_results. Requires the booktabs and graphicx packages.
+For the paper, the Sasaki rows will normally be merged into the proposed method's main table rather than shown on their own.
+
+table_all.tex
+
+Every metric (rows) against every method (columns), point values only, no intervals.
+Label: tab:sasaki_all_results.
+
+table_gap_length.tex
+
+Gap closure rate (%) for each method, split by erased-segment length. Bins are under 8, 8-16, 16-32, 32-64 and 64 or more pixels; empty bins are dropped.
+Includes a column with the number of gaps in each bin.
+Label: tab:sasaki_gap_length.
+
+main_table_values.csv
+
+Point estimates only: one row per method, one column per metric, values as fractions.
+The best source for exact numbers and for merging with the other folder.
+
+main_table_with_ci.csv
+
+The same metrics as text strings of the form "value [low, high]", in display units.
+
+paired_bootstrap_vs_baselines.csv
+
+Significance tests of each Sasaki variant against each baseline (Input and both Closing rows), on four key metrics: Fill F1 (tau=0), Gap closure, Bucket acc. and Leak-free images.
+Columns:
+method, baseline, metric
+diff: the Sasaki variant minus the baseline, as a fraction
+ci_lo, ci_hi: the 95% bootstrap interval of the difference
+p_one_sided: the share of bootstrap resamples where the difference is 0 or less
+A value of 0.001 means p < 0.001.
+If the difference is 0 in every resample, p = 1 and the comparison is not informative.
+There is NO direct test against the proposed method here. That needs both per-image files; see section 6.
+
+gap_closure_by_length.csv
+
+The data behind table_gap_length.tex, including the empty bins.
+
+gap_segments.csv
+
+One row per (method, erased segment). Columns: method, file, length (px), recall (the fraction of the segment redrawn).
+For custom gap-size analyses and plots across both folders.
+
+per_image_metrics.csv
+
+One row per (method, test image), with the raw counts behind every metric plus hole_frac, the fraction of the image's pixels that were erased.
+The columns are identical to per_image_metrics.csv in the paper_results folder, so the two files can be stacked, joined on the file column, to compute any comparison between the proposed method and Sasaki.
+
+summary.json
+
+Test-set description: number of images, number of erased segments, mean hole fraction, image size.
+arch_source, the input mean and standard deviation, and BEST_SCALE with the tuning metric and the number of tuning images.
+focus: the variant shown in the error maps.
+variants: one entry per Sasaki variant.
+Pretrained variants: the weights file, the scale and how it was chosen, and the precision (fp32).
+Retrained variants: the checkpoint path and epoch, init, loss, optimiser, learning rate, crop size, precision (fp16 autocast), and the test metrics the training script saved at that epoch (a consistency check).
+For every variant: params_M (parameters in millions); ms_per_image (time for one full-size image, including transfer to and from the GPU); peak_mem_gb (peak GPU memory); the GPU name.
+config: every evaluation setting. It must match the config in the paper_results folder's summary.json.
+results: the point estimate for every method and metric, plus software versions.
+
+fig_qualitative.pdf/.png
+
+One row per preview test image (the same fixed images as in the paper_results folder), full image.
+Columns: Input, Closing (k=9), one column per Sasaki variant (binarized output), Ground truth, and an error map for the focus variant.
+Error map colours: black = correct ink, green = erased ink correctly redrawn, red = missed ink, blue = false ink. A legend is included.
+
+fig_qualitative_zoom.pdf/.png
+
+The same layout, cropped to a 224x224 pixel window centred on the largest erased segment of each image.
+The crop is chosen from the input and ground truth only, so it matches the crop of the same images in the paper_results folder. That makes side-by-side figures of both methods possible.
+
+fig_failure_cases.pdf/.png
+
+The same zoomed layout for the 3 test images where the focus variant has the lowest fill F1, among images with at least 200 erased pixels. May be absent.
+
+fig_gap_closure_by_length.pdf/.png
+
+Line plot of the share of gaps closed (%) against gap-length bin, one line per method, with the focus variant drawn thicker.
+
+fig_per_image_boxplots.pdf/.png
+
+Box plots across test images, one box per method, outliers hidden.
+Left panel: per-image fill F1 at tau=0. Right panel: per-image bucket accuracy.
+
+scale_sweep.png (only if the scale was tuned)
+
+Metrics of the pretrained model against input scale, on the training images used for tuning. Supports the choice of BEST_SCALE.
+
+results.json (only if the earlier quick evaluation was run)
+
+Metrics from the earlier quick evaluation in the notebook. It uses the older, smaller metric set and is kept for reference only. Use main_table_values.csv for the paper.
+NOTES FOR WRITING THE PAPER
+Before combining the two folders, check that the Input and Closing rows are identical in both, and that the config blocks in both summary.json files match.
+Combined table: stack main_table_values.csv from both folders, keeping Input, Closing and Ours from paper_results and the Sasaki rows from this folder.
+Significance tests of Ours against Sasaki: stack the two per_image_metrics.csv files. Then resample test images with the same bootstrap procedure (1000 resamples, seed 0, pooled sums) and compare the two methods on each resample.
+Present the pretrained rows as zero-shot generalisation. The model was trained on different drawings with different line widths and gap sizes, so low scores there are expected and are not a flaw in the method. Say that the only adaptation was the input scale, chosen on training images.
+The retrained rows are the fair architectural comparison: same data, same augmentation, same test set.
+With loss "mse" and optim "adadelta", the run follows the original paper's training recipe.
+With loss "lineloss", it uses the proposed method's loss, so any remaining difference comes from the architecture alone.
+Report which variant is which.
+Only report the model as Sasaki et al. if arch_source is "official .t7 (exact)". An approximate fallback must be called "Sasaki-style architecture (approximate)".
+Sasaki's weights are licensed CC BY-NC-SA 4.0 (non-commercial). Research use is allowed; cite the paper.
+Timing numbers in this folder include transfer to and from the GPU; the proposed method's timing does not. Treat the comparison as approximate, or re-time both methods the same way.
+All results come from synthetic corruption on the held-out split. State this as a limitation.

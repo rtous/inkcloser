@@ -1,0 +1,109 @@
+{
+  "n_test_images": 1000,
+  "n_erased_segments": 26141,
+  "mean_hole_fraction": 0.0027642884546396685,
+  "image_size": 896,
+  "params_M": 43.359489,
+  "ms_per_image": 91.60651959999996,
+  "peak_mem_gb": 1.241880576,
+  "gpu": "Tesla T4",
+  "config": {
+    "threshold": 0.5,
+    "min_region_area": 20,
+    "tolerances": [
+      0,
+      2
+    ],
+    "bucket_iou": 0.9,
+    "gap_closed": 0.8,
+    "gap_min_area": 4,
+    "closing_kernels": [
+      5,
+      9
+    ],
+    "n_boot": 1000,
+    "seed": 0
+  },
+  "env": {
+    "torch": "2.11.0+cu128",
+    "python": "3.13.15"
+  },
+  "results": {
+    "Input (no restoration)": {
+      "Fill P (\u03c4=0)": null,
+      "Fill R (\u03c4=0)": 0.0,
+      "Fill F1 (\u03c4=0)": null,
+      "Fill P (\u03c4=2)": null,
+      "Fill R (\u03c4=2)": 0.0,
+      "Fill F1 (\u03c4=2)": null,
+      "Pixel IoU": 0.9682777914693709,
+      "Pixel F1": 0.9838832665449384,
+      "Ink kept": 1.0,
+      "Ink ratio": 0.9682777914693709,
+      "Gap closure": 0.0,
+      "Region count acc.": 0.001,
+      "Region recovery": 0.0,
+      "Bucket acc. (IoU\u22650.9)": 0.6405802526906879,
+      "Mean region IoU": 0.7091167739778962,
+      "Leaks / image": 15.463,
+      "Leak-free images": 0.001
+    },
+    "Closing (k=5)": {
+      "Fill P (\u03c4=0)": 0.010895601086709207,
+      "Fill R (\u03c4=0)": 0.018082520170420623,
+      "Fill F1 (\u03c4=0)": 0.013597839878649895,
+      "Fill P (\u03c4=2)": 1.0,
+      "Fill R (\u03c4=2)": 0.06135412747300284,
+      "Fill F1 (\u03c4=2)": 0.11561480920431709,
+      "Pixel IoU": 0.9208974378065596,
+      "Pixel F1": 0.9588199970302599,
+      "Ink kept": 1.0,
+      "Ink ratio": 1.0209244945783078,
+      "Gap closure": 0.013580199686316513,
+      "Region count acc.": 0.014,
+      "Region recovery": 0.3665415965842929,
+      "Bucket acc. (IoU\u22650.9)": 0.3757604117922321,
+      "Mean region IoU": 0.5830654431664593,
+      "Leaks / image": 13.084,
+      "Leak-free images": 0.002
+    },
+    "Closing (k=9)": {
+      "Fill P (\u03c4=0)": 0.012365709939861061,
+      "Fill R (\u03c4=0)": 0.0627749001336058,
+      "Fill F1 (\u03c4=0)": 0.02066142944000453,
+      "Fill P (\u03c4=2)": 0.912606187586056,
+      "Fill R (\u03c4=2)": 0.14612869866146364,
+      "Fill F1 (\u03c4=2)": 0.25191944898502655,
+      "Pixel IoU": 0.8371263823810586,
+      "Pixel F1": 0.911343270021606,
+      "Ink kept": 1.0,
+      "Ink ratio": 1.129316541546185,
+      "Gap closure": 0.0632340002295245,
+      "Region count acc.": 0.028,
+      "Region recovery": 0.3855608746280243,
+      "Bucket acc. (IoU\u22650.9)": 0.2279457182966776,
+      "Mean region IoU": 0.45111971924870764,
+      "Leaks / image": 9.449,
+      "Leak-free images": 0.003
+    },
+    "Ours": {
+      "Fill P (\u03c4=0)": 0.7362832836586858,
+      "Fill R (\u03c4=0)": 0.8404395247869179,
+      "Fill F1 (\u03c4=0)": 0.7849211918697322,
+      "Fill P (\u03c4=2)": 0.9166389672936858,
+      "Fill R (\u03c4=2)": 0.9391212658530156,
+      "Fill F1 (\u03c4=2)": 0.9277439314834122,
+      "Pixel IoU": 0.9855258428558796,
+      "Pixel F1": 0.992710164314305,
+      "Ink kept": 0.9999982875336167,
+      "Ink ratio": 1.0044858347473649,
+      "Gap closure": 0.7047167285107685,
+      "Region count acc.": 0.38,
+      "Region recovery": 0.9402251261482727,
+      "Bucket acc. (IoU\u22650.9)": 0.947477772578381,
+      "Mean region IoU": 0.9649816439721536,
+      "Leaks / image": 1.467,
+      "Leak-free images": 0.45
+    }
+  }
+}

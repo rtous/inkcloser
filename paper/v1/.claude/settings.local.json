@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 *)",
+      "WebSearch",
+      "Bash(mkdir -p figures)",
+      "Bash(cp dummy.png figures/dummy.png)",
+      "Bash(pdflatex -interaction=nonstopmode paper.tex)",
+      "Bash(bibtex paper *)"
+    ]
+  }
+}

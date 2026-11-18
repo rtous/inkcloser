@@ -1,0 +1,23 @@
+method,baseline,metric,diff,ci_lo,ci_hi,p_one_sided
+Sasaki17 pretrained (scale 1),Input (no restoration),Gap closure,0.2656746107646991,0.25767944379910224,0.2741998153483359,0.001
+Sasaki17 pretrained (scale 1),Input (no restoration),Bucket acc. (IoU≥0.9),-0.3781375760411792,-0.40635285012614086,-0.35005959232192485,1.0
+Sasaki17 pretrained (scale 1),Input (no restoration),Leak-free images,0.041,0.03,0.054,0.001
+Sasaki17 pretrained (scale 1),Closing (k=5),Fill F1 (τ=0),0.16458960706232859,0.15812049730701136,0.17103025130488658,0.001
+Sasaki17 pretrained (scale 1),Closing (k=5),Gap closure,0.2520944110783826,0.24426656174041875,0.2605720491607853,0.001
+Sasaki17 pretrained (scale 1),Closing (k=5),Bucket acc. (IoU≥0.9),-0.11331773514272342,-0.12707612735446805,-0.09856530652096906,1.0
+Sasaki17 pretrained (scale 1),Closing (k=5),Leak-free images,0.04,0.028999999999999998,0.053,0.001
+Sasaki17 pretrained (scale 1),Closing (k=9),Fill F1 (τ=0),0.15752601750097395,0.15152015701918634,0.1634809355667425,0.001
+Sasaki17 pretrained (scale 1),Closing (k=9),Gap closure,0.20244061053517462,0.19409807829636994,0.21161350832294878,0.001
+Sasaki17 pretrained (scale 1),Closing (k=9),Bucket acc. (IoU≥0.9),0.034496958352831064,0.027069404972471005,0.04299509924962617,0.001
+Sasaki17 pretrained (scale 1),Closing (k=9),Leak-free images,0.039,0.028,0.052,0.001
+"Sasaki17 retrained (scratch, mse, adadelta)",Input (no restoration),Gap closure,0.2079491985769481,0.19759098509509132,0.21867946363881574,0.001
+"Sasaki17 retrained (scratch, mse, adadelta)",Input (no restoration),Bucket acc. (IoU≥0.9),-0.27698642957416936,-0.31007063111753563,-0.24527154648751662,1.0
+"Sasaki17 retrained (scratch, mse, adadelta)",Input (no restoration),Leak-free images,0.084,0.068,0.10099999999999999,0.001
+"Sasaki17 retrained (scratch, mse, adadelta)",Closing (k=5),Fill F1 (τ=0),0.3619760277546611,0.34877514161864054,0.3750576514312873,0.001
+"Sasaki17 retrained (scratch, mse, adadelta)",Closing (k=5),Gap closure,0.19436899889063158,0.18413724017155172,0.20493011571904274,0.001
+"Sasaki17 retrained (scratch, mse, adadelta)",Closing (k=5),Bucket acc. (IoU≥0.9),-0.012166588675713574,-0.027924666169034506,0.004771253280814285,0.906
+"Sasaki17 retrained (scratch, mse, adadelta)",Closing (k=5),Leak-free images,0.083,0.067,0.09999999999999999,0.001
+"Sasaki17 retrained (scratch, mse, adadelta)",Closing (k=9),Fill F1 (τ=0),0.3549124381933064,0.3421525114892163,0.36747316312693884,0.001
+"Sasaki17 retrained (scratch, mse, adadelta)",Closing (k=9),Gap closure,0.1447151983474236,0.13425138294975517,0.15626298485139475,0.001
+"Sasaki17 retrained (scratch, mse, adadelta)",Closing (k=9),Bucket acc. (IoU≥0.9),0.1356481048198409,0.12290616237232557,0.14899775581940772,0.001
+"Sasaki17 retrained (scratch, mse, adadelta)",Closing (k=9),Leak-free images,0.082,0.066,0.099,0.001

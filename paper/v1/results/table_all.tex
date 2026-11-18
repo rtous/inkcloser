@@ -1,0 +1,29 @@
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+Metric & Input (no restoration) & Closing (k=5) & Closing (k=9) & Ours \\
+\midrule
+Fill P ($\tau$=0) $\uparrow$ & -- & 1.1 & 1.2 & 73.6 \\
+Fill R ($\tau$=0) $\uparrow$ & 0.0 & 1.8 & 6.3 & 84.0 \\
+Fill F1 ($\tau$=0) $\uparrow$ & -- & 1.4 & 2.1 & 78.5 \\
+Fill P ($\tau$=2) $\uparrow$ & -- & 100.0 & 91.3 & 91.7 \\
+Fill R ($\tau$=2) $\uparrow$ & 0.0 & 6.1 & 14.6 & 93.9 \\
+Fill F1 ($\tau$=2) $\uparrow$ & -- & 11.6 & 25.2 & 92.8 \\
+Pixel IoU $\uparrow$ & 96.8 & 92.1 & 83.7 & 98.6 \\
+Pixel F1 $\uparrow$ & 98.4 & 95.9 & 91.1 & 99.3 \\
+Ink kept $\uparrow$ & 100.0 & 100.0 & 100.0 & 100.0 \\
+Ink ratio $\to 1$ & 0.968 & 1.021 & 1.129 & 1.004 \\
+Gap closure $\uparrow$ & 0.0 & 1.4 & 6.3 & 70.5 \\
+Region count acc. $\uparrow$ & 0.1 & 1.4 & 2.8 & 38.0 \\
+Region recovery $\uparrow$ & 0.0 & 36.7 & 38.6 & 94.0 \\
+Bucket acc. (IoU$\geq$0.9) $\uparrow$ & 64.1 & 37.6 & 22.8 & 94.7 \\
+Mean region IoU $\uparrow$ & 70.9 & 58.3 & 45.1 & 96.5 \\
+Leaks / image $\downarrow$ & 15.463 & 13.084 & 9.449 & 1.467 \\
+Leak-free images $\uparrow$ & 0.1 & 0.2 & 0.3 & 45.0 \\
+\bottomrule
+\end{tabular}
+\caption{All metrics on the test set (percentages unless noted; 95\% CIs in \texttt{main\_table\_with\_ci.csv}).}
+\label{tab:all_results}
+\end{table}

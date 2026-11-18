@@ -1,0 +1,236 @@
+17-Nov-2026
+
+
+Dear Dr. Ruben Tous:
+
+Thank you for submitting manuscript, “InkCloser: Line-Art Completion for Paint-Bucket Colorization,” MM-2026-10-0109. I regret to inform you that the reviewers could not recommend the manuscript in its current form for publication in IEEE MultiMedia. The completed reviews follow below.
+
+When you are ready to submit your revision, visit the following link:
+https://ieee.atyponrex.com/submission/submissionBoard/REX-PROD-2-AAEA92C5-F2B1-4C74-8894-4AC5CA8D12C0-933BA8F8-C36E-4166-A517-4112AB4F1BC2-43426/current?idtype=external
+
+Please revise the paper according to the referees' comments and submit the rewrite and a summary of changes within one month. The rewrite will go through the review process again.
+
+Should you chose to submit your revision, please keep in mind that our MultiMedia length guidelines still apply: word count should not exceed 6,500 words, figures/tables should not exceed 12 total (account for 200 words each), and references should be limited to the most relevant 20.
+
+Important: Your main manuscript file cannot include colored or highlighted text. Please upload a clean, publication-ready version of your manuscript under the "Formatted (Double Column) Main File - PDF Document Only" file designation. If you would like to include an annotated version of your main manuscript file, please upload it under the "Summary of Changes" file designation.
+
+To upload the revised version when it is complete:
+1. Please log onto ScholarOne Manuscripts at https://mc.manuscriptcentral.com/mm-cs
+2. Enter the Author Center
+3. Look under My Manuscripts
+4. Click on Manuscripts with Decisions
+5. Look under Action
+6. Click on the Create a Revision hyperlink
+7. Respond to the decision. The response box is located at the end of the actual decision letter
+8. Follow the remaining submission process as guided by the system
+
+
+If you are NOT interested in resubmitting, please contact Mr. Abhishek Tiwari at tiwari.a@ieee.org. Otherwise, we look forward to receiving your revised manuscript.
+
+If you have any questions regarding our policies or procedures, please refer to the magazines' Author Information page linked from the Instructions and Forms (top right corner of the ScholarOne Manuscripts screen) or contact the Publications office if you have any additional questions the online resources do not answer.
+
+Since we are working with a schedule, please give this high priority. Thank you for your understanding and efforts.
+
+Regards,
+
+B. Prabhakaran
+Editor in Chief, IEEE MultiMedia
+bprabhakaran@utdallas.edu
+
+*************************
+
+Editor
+Comments to the Author:
+The reviewers have raised substantial concerns regarding the manuscript's methodological novelty, technical contributions, and experimental rigor. In particular, the limited dataset diversity, insufficient comparisons with recent state-of-the-art methods, lack of rigorous ablation studies, and absence of real-world validation significantly weaken the manuscript's contributions. Addressing these concerns would require fundamental improvements to both the methodology and experimental evaluation, beyond the scope of a typical revision. Therefore, the manuscript is not recommended for publication in its current form.
+
+*************************
+Reviews:
+Please note that some reviewers may have included additional comments in a separate file. If a review contains the note "see the attached file" under Section III A - Public Comments, you will need to log on to ScholarOne Manuscripts to view the file. After logging in, select the Author Center, click on the "Manuscripts with Decisions" queue and then click on the "view decision letter" link for this manuscript. You must scroll down to the very bottom of the letter to see the file(s), if any. This will open the file that the reviewer(s) or the Associate Editor included for you along with their review.
+
+Reviewer: 1
+
+Recommendation: Reject
+
+Comments:
+Thank you very much to the Editor for inviting me to review this manuscript. The paper presents InkCloser, a mask-free line-art repair system intended to make standard paint-bucket colorization more reliable, using a U-Net backbone with gated convolutions, attention at two resolutions, and losses emphasizing missing strokes. The authors construct 55,000 clean/corrupted pairs from 10,000 source drawings and report a 70.5% gap-closure rate, 94.7% bucket accuracy, and 45.0% leak-free drawings on 1,000 test images. Evaluating the downstream coloring outcome rather than relying solely on pixel overlap is a useful aspect of the work, and the gains in Table 1 and Figure 3 deserve recognition. Nevertheless, Sasaki et al. already addressed joint gap detection and repair without a supplied gap mask, while most of the proposed architectural and loss components are established techniques; without component-level evidence and testing on naturally occurring gaps, it is difficult to establish a substantial methodological contribution rather than an effective task-specific integration.
+
+(1) I remain unconvinced by the claimed methodological novelty. In “Learned line-art restoration,” the authors acknowledge that Sasaki et al. [13] already detect and repair gaps without a provided mask, whereas Figure 2 combines U-Net [18], gated convolutions [4], Transformers [19], and established cross-entropy/Dice objectives. I would like the authors to identify precisely which design constitutes a new technical advance rather than a task-specific adaptation, and support that distinction experimentally; better aggregate performance than [13] alone does not resolve this question.
+
+(2) Figure 2 includes attention modules at two scales, five dilated residual blocks, gated encoder convolutions, and a local gap Dice term, yet the Results section provides no component ablations. I would particularly like to see gap closure, bucket accuracy, and leaks per image after removing the 28×28 attention, removing the 56×56 attention, replacing gated convolutions, and omitting the local loss. Without these experiments, the stated explanation that these components jointly account for the improvement remains speculative.
+
+(3) I noticed that InkCloser reportedly preserves 99.9998% of existing input ink, and the discussion “Why redrawing everything is not enough” argues that regenerating intact strokes creates additional gaps. This leaves an important alternative explanation untested: much of the gain may come from preserving the input and predicting only added strokes, rather than from the particular 43.4-million-parameter architecture. I suggest comparing against a simple input-preserving residual completion model, or adding an input-ink-preservation post-processing step to the predictions of Sasaki et al. [13], to establish how much advantage remains attributable to the proposed architecture.
+
+(4) “Building a dataset of broken drawings” and “Lessons and limitations” make clear that both training and test gaps are synthesized by erasing skeleton segments from initially complete coloring pages. I am concerned that this distribution does not adequately represent naturally interrupted hand-drawn strokes, scanning damage, compression artifacts, or errors from line extraction, especially when distinguishing defects from intentional endpoints. I recommend evaluating naturally damaged artwork across different line widths, styles, and resolutions; even where pixelwise ground truth is unavailable, real paint-bucket leakage and unintended closures could still be assessed.
+
+(5) Table 1 compares against two morphological-closing kernel sizes and the 2017 network of Sasaki et al., although the related-work discussion also identifies trapped-ball segmentation [8], the line-art coloring method of Fourey et al. [10], and Delaunay Painting [11]. I recognize that these approaches do not necessarily produce restored line art, but they remain relevant workflow-level comparators because the main practical claim concerns one-click coloring. I would like to see downstream coloring success compared under explicit and comparable assumptions about user input and parameter tuning, or a clear justification for excluding these approaches; otherwise, the statement that the other methods fail to improve on the input risks being interpreted too broadly.
+
+(6) Under “Measuring what artists care about,” a gap is considered closed when at least 80% of its erased pixels are restored, although pixel coverage does not ensure topological reconnection and a small residual break may still cause a leak. Moreover, bucket accuracy is computed using an IoU≥0.9 match between output and original regions, which is not identical to clicking through the regions with a particular paint-bucket tool. I recommend defining region matching and leak detection more precisely, and validating the proxy metrics against actual flood-fill operations and observed leakage events.
+
+(7) The dataset section describes erasing T-junctions and mid-stroke segments, with upper limits of 35% of a stroke and 25% of a connected shape, but it does not specify the sampling distributions of gap lengths and locations or the details of skeleton extraction and small-shape exclusion. I would also appreciate clarification of how source-image deduplication was checked after the train/test split. Although [1] and [2] provide links to the dataset and code, the paper itself should document the generation protocol and random seeds sufficiently to make the experimental distribution understandable and reproducible.
+
+(8) “Teaching the network to focus on gaps” reports AdamW, a batch size of four, five training epochs, and the main loss terms, but not the learning rate, weight decay, scheduling, validation protocol, or checkpoint-selection criterion. I also note that each training drawing has six corrupted variants, only one of which is sampled whenever it is used, so it is unclear how much of this variation is actually seen within five epochs. Please report the full training settings, convergence behavior, and variability across repeated runs, and justify the loss-weight choices shown in Figure 2.
+
+(9) The Results section states that four metrics improve significantly against every baseline under a paired bootstrap (p≤0.001), but gives neither confidence intervals nor the number of bootstrap resamples or variability across training seeds. I also noticed that the longest-gap group in Figure 4 contains only 15 gaps, with 12 reportedly repaired; this should not be interpreted with the same confidence as the better-populated bins. I suggest reporting image-level confidence intervals, repeat-training stability, and bin counts with uncertainty intervals in Figure 4.
+
+(10) Figure 3 shows crops centered on the largest gap in each of four test drawings, which is helpful for illustrating successful restorations but offers a limited account of failures. Table 1 indicates that 55.0% of images still have at least one leak, while Figure 4 reports only 44.5% closure for gaps shorter than eight pixels, both of which matter for practical use. I would like to see randomly selected failures, examples of accidentally merging separate regions, and examples of intentionally terminated strokes being extended, with a distinction between unrepaired original gaps and newly introduced topological errors.
+
+Additional Questions:
+A1. How relevant is this manuscript to the readers of this periodical? Please explain your rating in the Detailed Comments section.: Relevant
+
+B1. Please summarize what you view as the key point(s) of the manuscript and the importance of the content to the readers of this periodical. If you don't have any comments, please type No Comments.: No Comments
+
+B2. Is the manuscript technically sound? Please explain your answer in the Detailed Comments section.: Appears to be - but didn't check completely
+
+B3. What do you see as this manuscript's contribution to the literature in this field? If you don't have any comments, please type No Comments.: No Comments
+
+B4. What do you see as the strongest aspect of this manuscript? If you don't have any comments, please type No Comments.: No Comments
+
+B5. What do you see as the weakest aspect of this manuscript? If you don't have any comments, please type No Comments.: No Comments
+
+C1. If the title, abstract, and/or keywords are satisfactory, please denote this by placing a checkmark beside each one. Please elaborate in the Detailed Comments section.: Abstract. Keywords. Title
+
+C2. Does the manuscript contain sufficient and appropriate references? Please elaborate in the Detailed Comments section.: References are sufficient and appropriate
+
+If you are suggesting additional references they must be entered in the text box provided.  All suggestions must include full bibliographic information plus a DOI.
+
+
+If you are not suggesting any references, please type NA.: No Comments
+
+C3. Does the introduction state the objectives of the manuscript in terms that encourage the reader to read on? please explain your answer in the Detailed Comments section.: Could be improved
+
+C4. How would you rate the organization of the manuscript? Please elaborate in the Detailed Comments section.: Could be improved
+
+C5. Is the manuscript focused? Please elaborate in the Detailed Comments section.: Yes
+
+C6. Is the length of the manuscript appropriate for the topic? Please elaborate in the Detailed Comments section.: Yes
+
+C7. Please rate the readability of this manuscript in the Detailed Comments section.: Readable - but requires some effort to understand
+
+Please rate the manuscript. Explain your choice in the Detailed Comments section.: Fair
+
+
+Reviewer: 2
+
+Recommendation: Author Should Prepare A Major Revision For A Second Review
+
+Comments:
+(There are no comments. Please check to see if comments were included as a file attachment with this e-mail or as an attachment in your Author Center.)
+
+Additional Questions:
+A1. How relevant is this manuscript to the readers of this periodical? Please explain your rating in the Detailed Comments section.: Relevant
+
+B1. Please summarize what you view as the key point(s) of the manuscript and the importance of the content to the readers of this periodical. If you don't have any comments, please type No Comments.: This paper presents InkCloser, a mask-free line-art restoration method intended to prevent paint-bucket leakage caused by gaps in contours. The proposed approach combines a U-Net architecture, gated convolutions, multiscale attention, and gap-focused losses, and is evaluated on a dataset of synthetically corrupted line drawings. The emphasis on fillability rather than pixel-level reconstruction accuracy alone is practically relevant. The reported improvements in region-level performance are substantial, and the authors provide an accessible repository containing source code and pretrained weights.
+
+B2. Is the manuscript technically sound? Please explain your answer in the Detailed Comments section.: Yes
+
+B3. What do you see as this manuscript's contribution to the literature in this field? If you don't have any comments, please type No Comments.:
+
+B4. What do you see as the strongest aspect of this manuscript? If you don't have any comments, please type No Comments.:
+
+B5. What do you see as the weakest aspect of this manuscript? If you don't have any comments, please type No Comments.: 1. The contributions should be more clearly established. Sasaki et al. (2017) already demonstrated joint gap detection and completion without requiring an input gap mask. Therefore, this capability alone does not establish the novelty of the present work. Moreover, U-Net, gated convolutions, Transformers, and Dice losses are established components. The manuscript should more clearly distinguish its contributions in terms of the task formulation, architectural design, loss formulation, dataset, and evaluation protocol. In particular, the authors should explain which limitations of the closest prior method are addressed and what constitutes the substantive methodological advance beyond combining existing components.
+2. The “gap closure” metric does not directly measure whether a gap is actually closed.
+A gap is considered closed when at least 80% of its erased ink pixels are recovered. However, pixel coverage is not equivalent to topological closure. A gap may satisfy this threshold while retaining a connected passage through which a fill can leak. Conversely, a thinner or slightly displaced completion may prevent leakage without meeting the pixel-coverage threshold.
+3. The region-level and leakage metrics require more precise definitions and more cautious interpretation.
+The implementation of bucket accuracy is insufficiently specified. Please clarify whether region extraction uses 4- or 8-connectivity, whether the exterior background is included, how small regions are handled, whether many-to-one matching is permitted, and whether the reported score is pooled over regions or averaged over images. In the definition of a leak, “most” should be replaced with an explicit threshold. The counting rule should also be specified for cases in which one output region merges more than two ground-truth regions.
+Furthermore, an IoU of at least 0.9 does not necessarily imply leakage-free filling. Similarly, a leak-free image may still contain erroneous region splits, missing regions, or unnecessary added strokes. Consequently, leak-free images should not be equated with images requiring no manual correction. Additional statistics on region splitting and disappearance would provide a more complete assessment.
+4. Ablation experiments are needed to establish the contribution of the individual components.
+The manuscript attributes the improvements to gated convolutions, skip connections, the two attention modules, and the gap-focused loss. However, comparing the complete model with a different network does not isolate these contributions.
+I recommend evaluating a standard U-Net with a basic loss, a standard U-Net with the proposed loss, and variants that remove gated convolutions, each attention branch, and the local Dice term. Region-level performance, input-stroke retention, parameter count, and runtime should be reported to clarify the benefits and costs of the additional complexity.
+5. The baseline coverage should be expanded to include recent related work and more informative reference models.
+The current comparisons are largely limited to morphological closing and the method of Sasaki et al. (2017). The pretrained and retrained versions of the latter are two configurations of the same method, rather than independent algorithmic baselines. The authors should discuss the comparability of, and consider experimental comparisons with, recent relevant approaches, particularly: Deterministic Robust Gap-Closing for Animation Line-Art Colorization (2025) /Fast Leak-Resistant Segmentation for Anime Line Art (2024).
+A basic learning-based reference such as a standard U-Net would also help establish the necessity of the proposed architecture.
+6. Evaluation on synthetic corruption alone does not establish reliability in real drawing workflows.
+Both training and testing rely on rule-based synthetic stroke removal. The results therefore primarily establish performance under the adopted corruption distribution. Gaps arising from actual drawing, scanning, compression, or line extraction may differ substantially in geometry, grayscale characteristics, and noise.
+I recommend adding an evaluation on naturally occurring gaps, together with negative cases such as intact drawings, intentionally open strokes, and nearby strokes that should remain disconnected. Distinguishing intentional stroke endings from accidental breaks is presented as an important challenge, but this capability is not directly evaluated.
+7. The loss functions and notation should be specified more completely.
+The paper states that the network predicts background probabilities, whereas the Dice losses are described in terms of ink overlap. Please clarify whether the predicted background probabilities are converted to ink probabilities before computing these losses.
+Explicit formulas should be provided for the weighted BCE, global Dice, and local Dice losses. These should define the foreground/background convention, hole-mask construction, weight normalization, smoothing constant, per-image versus batch-level reduction, and treatment of samples without gaps. The relationship between the radius (r=7) in Figure 2 and the 15-pixel neighborhood described in the text should also be clarified.
+Minor Comments
+1.Based on the displayed values in Table 1, the improvement in bucket accuracy over the retrained baseline is (94.7-36.4=58.3) percentage points, whereas the text reports 58.4. Please reconcile this difference or indicate that the calculation uses unrounded values.
+2.The statement that the method separates 94.0% of the regions merged by gaps lacks a clear metric definition. Please explain how this quantity is computed and how it differs from the reported 94.7% bucket accuracy.
+3.The notation “Conv ×3 →1” in Figure 2 is ambiguous. Please specify the number of layers, kernel sizes, and output channels. Also, skip connections transfer features; they do not, by themselves, guarantee that intact input strokes are copied unchanged.
+4.The text describes half-precision inference, while Figure 2 states that the attention modules operate in FP32. Please describe the precision configuration consistently and specify the conditions used for runtime and memory measurements.
+5.Figure 4 defines gap length using the longer side of the gap’s bounding box. This should be clearly identified as a proxy for spatial extent rather than the actual arc length of the missing stroke.
+6.Please include actual flood-fill results using corresponding seed locations across methods. Such visualizations would more directly demonstrate leakage, erroneous region splitting, and region disappearance.
+7.The statements in the abstract and conclusion that the other methods do not improve upon the input should be restricted to the relevant metric. Table 1 shows that some baselines improve the average number of leaks or the proportion of leak-free images.
+
+C1. If the title, abstract, and/or keywords are satisfactory, please denote this by placing a checkmark beside each one. Please elaborate in the Detailed Comments section.: Abstract. Keywords. Title
+
+C2. Does the manuscript contain sufficient and appropriate references? Please elaborate in the Detailed Comments section.: Important references are missing; more references are needed
+
+If you are suggesting additional references they must be entered in the text box provided.  All suggestions must include full bibliographic information plus a DOI.
+
+
+If you are not suggesting any references, please type NA.: Deterministic Robust Gap-Closing for Animation Line-Art Colorization (2025)
+Fast Leak-Resistant Segmentation for Anime Line Art (2024).
+
+C3. Does the introduction state the objectives of the manuscript in terms that encourage the reader to read on? please explain your answer in the Detailed Comments section.: Could be improved
+
+C4. How would you rate the organization of the manuscript? Please elaborate in the Detailed Comments section.: Could be improved
+
+C5. Is the manuscript focused? Please elaborate in the Detailed Comments section.: Yes
+
+C6. Is the length of the manuscript appropriate for the topic? Please elaborate in the Detailed Comments section.: Yes
+
+C7. Please rate the readability of this manuscript in the Detailed Comments section.: Readable - but requires some effort to understand
+
+Please rate the manuscript. Explain your choice in the Detailed Comments section.: Fair
+
+
+Reviewer: 3
+
+Recommendation: Author Should Prepare A Major Revision For A Second Review
+
+Comments:
+This manuscript presents a deep learning architecture integrating gated convolutions and transformer blocks to close line-art gaps for flood-fill colorization. Evaluated on a synthetic dataset, it outperforms morphological methods and a prior learned approach. However, limitations in dataset diversity, baseline comparisons, and architectural validation require major revisions.
+
+The paper addresses a practical engineering problem in animation production and introduces a novel evaluation metric simulating paint-bucket behavior. While the reported improvements in bucket accuracy are significant, the study lacks real-world validation, modern baselines, and rigorous ablation experiments. A major revision is recommended to address these fundamental experimental and technical shortcomings.
+
+Specific Comments
+1- Section 2 uses purely synthetic broken lines, failing to capture real-world gap distributions. The authors acknowledge this limitation. Introduce scanned or naturally broken line art to validate engineering robustness and demonstrate generalization beyond synthetic coloring pages.
+2- The architecture combines gated convolutions, dilated residual blocks, and transformer modules without an ablation study. It remains unclear how much each component contributes to the final metrics. Add comprehensive ablation experiments isolating each module to prove their individual necessity.
+3- Figure 4 shows gap closure drops to 44.5% for gaps under 8 pixels. While attributed to the strict evaluation criterion, this constitutes a technical defect for fine detail restoration. Analyze the theoretical cause and propose a structural remedy.
+4- Section 4 states the model trained for only 5 epochs. This minimal duration raises concerns about convergence for a 43.4 million parameter network. Provide exact loss curves and justify the stopping criteria to ensure reliable reporting and rule out underfitting.
+5- The Results section compares against morphological closing and the 2017 Sasaki network. Omitting comparisons with modern diffusion-based or blind inpainting models is a knowledge gap. Include recent state-of-the-art generative inpainting models to establish a rigorous performance baseline.
+6- Section 2 fixes image resolution at 896x896 pixels. Production environments demand varied and higher resolutions. Modify the evaluation to test the framework across diverse aspect ratios and ultra-high-resolution canvas sizes to prove practical deployability in real animation pipelines.
+7- Training data generation relies on 1-pixel-wide centerlines, ignoring varying stroke thicknesses common in actual production. Expand the experimental design to evaluate closure accuracy across distinct stroke weights and brush textures to reflect realistic artistic workflows.
+8- Section 4 applies a 0.5 weight to the local Dice term based on early qualitative observations. This lacks rigorous derivation. Provide a quantitative sensitivity analysis to demonstrate that 0.5 is optimal rather than an arbitrary empirical selection.
+9- The manuscript briefly mentions failures on long curved contours without structural analysis. Provide a rigorous analysis of the receptive field or attention mechanism limits causing these failures and suggest explicit architectural modifications to address this limitation.
+10- The inference time of 92ms on a T4 GPU may hinder real-time interactive coloring pipelines. Provide a detailed execution efficiency breakdown on consumer-grade artist workstations and propose optimizations to reduce computational latency for practical engineering deployability.
+11- Peak memory usage of 1.24GB limits deployment on standard hardware. Discuss memory reduction techniques, such as integer quantization or attention sparsity, to align the architecture with practical hardware limitations commonly found in standard artist workstations.
+12- The method description lacks discussion on parallel processing capabilities. Explain how the U-Net and transformer modules can be optimized for hardware parallelization to reduce execution latency and improve throughput in batch processing environments.
+13- The architectural complexity of transformer blocks lacks mathematical justification. Compare these heavy modules against computationally lighter, hardware-efficient algorithmic alternatives for line completion to prove that the added deep learning complexity is necessary.
+
+Additional Questions:
+A1. How relevant is this manuscript to the readers of this periodical? Please explain your rating in the Detailed Comments section.: Relevant
+
+B1. Please summarize what you view as the key point(s) of the manuscript and the importance of the content to the readers of this periodical. If you don't have any comments, please type No Comments.:
+
+B2. Is the manuscript technically sound? Please explain your answer in the Detailed Comments section.: Yes
+
+B3. What do you see as this manuscript's contribution to the literature in this field? If you don't have any comments, please type No Comments.:
+
+B4. What do you see as the strongest aspect of this manuscript? If you don't have any comments, please type No Comments.:
+
+B5. What do you see as the weakest aspect of this manuscript? If you don't have any comments, please type No Comments.:
+
+C1. If the title, abstract, and/or keywords are satisfactory, please denote this by placing a checkmark beside each one. Please elaborate in the Detailed Comments section.: Abstract. Keywords. Title
+
+C2. Does the manuscript contain sufficient and appropriate references? Please elaborate in the Detailed Comments section.: References are sufficient and appropriate
+
+If you are suggesting additional references they must be entered in the text box provided.  All suggestions must include full bibliographic information plus a DOI.
+
+
+If you are not suggesting any references, please type NA.: NA
+
+C3. Does the introduction state the objectives of the manuscript in terms that encourage the reader to read on? please explain your answer in the Detailed Comments section.: Could be improved
+
+C4. How would you rate the organization of the manuscript? Please elaborate in the Detailed Comments section.: Could be improved
+
+C5. Is the manuscript focused? Please elaborate in the Detailed Comments section.: Yes
+
+C6. Is the length of the manuscript appropriate for the topic? Please elaborate in the Detailed Comments section.: Yes
+
+C7. Please rate the readability of this manuscript in the Detailed Comments section.: Easy to read
+
+Please rate the manuscript. Explain your choice in the Detailed Comments section.: Good

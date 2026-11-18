@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcccccccccc}
+\toprule
+Method & Fill P ($\tau$=0) $\uparrow$ & Fill R ($\tau$=0) $\uparrow$ & Fill F1 ($\tau$=0) $\uparrow$ & Fill F1 ($\tau$=2) $\uparrow$ & Pixel F1 $\uparrow$ & Ink ratio $\to 1$ & Gap closure $\uparrow$ & Bucket acc. (IoU$\geq$0.9) $\uparrow$ & Leaks / image $\downarrow$ & Leak-free images $\uparrow$ \\
+\midrule
+Input (no restoration) & -- & 0.0{\scriptsize$\pm$0.0} & -- & -- & \textbf{98.4}{\scriptsize$\pm$0.0} & 0.968{\scriptsize$\pm$0.001} & 0.0{\scriptsize$\pm$0.0} & \textbf{64.1}{\scriptsize$\pm$1.6} & 15.463{\scriptsize$\pm$0.662} & 0.1{\scriptsize$\pm$0.1} \\
+Closing (k=5) & 1.1{\scriptsize$\pm$0.1} & 1.8{\scriptsize$\pm$0.1} & 1.4{\scriptsize$\pm$0.1} & 11.6{\scriptsize$\pm$0.4} & 95.9{\scriptsize$\pm$0.1} & \textbf{1.021}{\scriptsize$\pm$0.003} & 1.4{\scriptsize$\pm$0.2} & 37.6{\scriptsize$\pm$1.1} & 13.084{\scriptsize$\pm$0.579} & 0.2{\scriptsize$\pm$0.2} \\
+Closing (k=9) & 1.2{\scriptsize$\pm$0.1} & 6.3{\scriptsize$\pm$0.2} & 2.1{\scriptsize$\pm$0.1} & 25.2{\scriptsize$\pm$0.7} & 91.1{\scriptsize$\pm$0.4} & 1.129{\scriptsize$\pm$0.009} & 6.3{\scriptsize$\pm$0.4} & 22.8{\scriptsize$\pm$1.1} & \textbf{9.449}{\scriptsize$\pm$0.430} & 0.3{\scriptsize$\pm$0.4} \\
+Sasaki17 pretrained (scale 1) & 10.7{\scriptsize$\pm$0.5} & 54.0{\scriptsize$\pm$1.0} & 17.8{\scriptsize$\pm$0.7} & 81.9{\scriptsize$\pm$0.6} & 90.1{\scriptsize$\pm$0.3} & 1.081{\scriptsize$\pm$0.003} & \textbf{26.6}{\scriptsize$\pm$0.8} & 26.2{\scriptsize$\pm$1.5} & 13.768{\scriptsize$\pm$1.380} & 4.2{\scriptsize$\pm$1.2} \\
+Sasaki17 retrained (scratch, mse, adadelta) & \textbf{28.1}{\scriptsize$\pm$1.3} & \textbf{56.5}{\scriptsize$\pm$1.3} & \textbf{37.6}{\scriptsize$\pm$1.4} & \textbf{87.2}{\scriptsize$\pm$0.7} & 94.1{\scriptsize$\pm$0.2} & 0.974{\scriptsize$\pm$0.001} & 20.8{\scriptsize$\pm$1.1} & 36.4{\scriptsize$\pm$2.1} & 19.364{\scriptsize$\pm$1.865} & \textbf{8.5}{\scriptsize$\pm$1.6} \\
+\bottomrule
+\end{tabular}}
+\caption{Sasaki et al. (2017) on the held-out test set (1000 images, 26141 erased segments). Percentages unless noted; $\pm$ is half the 95\% bootstrap CI. $\tau$: pixel tolerance. Bucket acc.: GT regions recovered with IoU$\geq$0.9. Leak: one predicted region spanning two GT regions.}
+\label{tab:sasaki_results}
+\end{table}

@@ -1,0 +1,174 @@
+PAPER_RESULTS FOLDER: CONTENTS AND HOW TO READ THEM
+
+CONTEXT
+
+This folder holds the final evaluation of a deep-learning method that restores broken lines in binary (black and white) line-art cartoon images. The purpose is to make the images usable with the paint-bucket colouring tool. That tool floods a closed white region, so a single gap in an outline makes the colour spill into neighbouring regions.
+
+Task setup:
+
+The model receives an image whose lines have missing parts (holes) and outputs the complete drawing.
+At inference time the model is NOT told where the holes are. This makes the task harder than standard inpainting, where a mask of the missing area is given.
+Training pairs (corrupted, clean) were made by artificially erasing parts of the lines in about 10,000 clean ground-truth drawings.
+Evaluation uses a frozen, held-out test set. The corrupted test images are stored on disk, so every method sees exactly the same holes.
+
+Model ("Ours"):
+
+A U-Net with gated convolutions in the encoder.
+Transformer self-attention at the bottleneck (28x28 feature map, 6 blocks).
+A stack of dilated residual convolutions (dilations 1, 2, 4, 8, 16) followed by 3 transformer blocks at the 56x56 level.
+Input and output are 1-channel images at IMAGE_SIZE x IMAGE_SIZE (896x896 in the design notes; the exact value is recorded in summary.json).
+Training loss: weighted BCE with 3x weight on hole pixels, plus a global Dice loss, plus a Dice loss restricted to a 7-pixel neighbourhood around the holes.
+Training used AdamW, cosine learning-rate decay, mixed precision and paired geometric augmentation.
+The output is a probability map, binarized at 0.5 for all metrics.
+METHODS COMPARED
+
+Every table has one row (or column) per method:
+
+"Input (no restoration)": the corrupted image evaluated as if it were the output. This is the lower bound and shows how much damage the holes do. It adds no ink, so fill precision and fill F1 are undefined for it (shown as "--" or blank).
+"Closing (k=5)" and "Closing (k=9)": morphological closing of the ink mask (dilation then erosion) with an elliptical kernel of diameter k pixels. This is the classical mask-free way to close gaps, and it is essentially what "close gap" options in drawing software do. It can only bridge gaps shorter than about k pixels. It also fills narrow white areas and sharp corners, which thickens junctions and can lower the region metrics below those of the raw input.
+"Ours": the proposed model.
+CONVENTIONS
+A pixel is ink if its value is below 0.5, on images scaled to [0, 1] where 0 is black.
+A region is a 4-connected white area. Using 4-connectivity for the background pairs correctly with 8-connected ink lines. White regions smaller than 20 pixels are ignored because they are anti-aliasing specks.
+Unless marked otherwise, metrics are pooled over the whole test set (micro average). Counts are summed over all images first and the ratio is taken once.
+Confidence intervals are 95% percentile bootstrap intervals over test images (1000 resamples, seed 0). The same resamples are used for every method, which makes the comparisons paired.
+Percent metrics appear in the tables as percentages with one decimal. In the CSV and JSON files they are fractions between 0 and 1.
+METRICS
+
+Fill metrics measure only the ink a method ADDS: pixels that are ink in the output but not in the input. They are computed at pixel tolerance tau = 0 (exact) and tau = 2 (within 2 pixels).
+
+Fill P (precision): the share of added ink that lies on a true line (within tau).
+Fill R (recall): the share of erased ink (true ink missing from the input) that was redrawn (within tau).
+Fill F1: the harmonic mean of Fill P and Fill R.
+
+Pixel metrics cover all ink in the image:
+
+Pixel IoU and Pixel F1: overlap between output ink and ground-truth ink.
+Ink kept: the share of the input's ink that is still ink in the output. It checks that the method does not delete existing lines.
+Ink ratio: output ink divided by ground-truth ink. 1 is ideal; above 1 means lines are too thick or there is spurious ink; below 1 means ink is missing.
+
+Gap metric:
+
+An erased segment is one 8-connected component of the ground-truth ink that is missing from the input, ignoring components under 4 pixels.
+A segment counts as closed if at least 80% of its pixels are ink in the output.
+Gap closure: the share of erased segments that are closed.
+Gap length is the longest side of the segment's bounding box, in pixels.
+
+Region and paint-bucket metrics (the most relevant for the application):
+
+Region count acc.: the share of images where the output has exactly the same number of closed regions as the ground truth.
+Region recovery: the share of regions merged by the holes (ground-truth count minus input count) that the output separates again.
+Bucket acc. (IoU≥0.9): each ground-truth region is matched to the output region that overlaps it best (by IoU). It counts as correctly paintable if that IoU is at least 0.9. The metric is the share of ground-truth regions that are correctly paintable. This approximates the share of regions a user could fill correctly with one bucket click.
+Mean region IoU: the average of that best-match IoU over all ground-truth regions.
+Leak: one output region that contains at least 50% of each of two or more ground-truth regions, meaning a bucket fill would spill across them. Each output region counts (number of ground-truth regions it absorbs minus 1) leaks.
+Leaks / image: the average number of leaks per image. Lower is better.
+Leak-free images: the share of images with zero leaks. This is the share of drawings that are fully ready to colour without manual correction.
+
+Arrows used in the LaTeX tables: ↑ means higher is better, ↓ means lower is better, →1 means closest to 1 is best.
+
+FILES
+
+table_main.tex
+
+The main LaTeX results table, ready to \input into the paper. Rows are methods; columns are Fill P, Fill R and Fill F1 at tau=0, Fill F1 at tau=2, Pixel F1, Ink ratio, Gap closure, Bucket acc., Leaks / image and Leak-free images.
+Each cell shows the value followed by a small "±" with half the width of the 95% bootstrap interval.
+The best value in each column is in bold, with ties all bold. A column where every method is equal has no bold.
+"--" means undefined.
+The caption states the number of test images and erased segments.
+Label: tab:main_results. Requires the booktabs and graphicx packages; it is wrapped in \resizebox to fit the page width.
+
+table_all.tex
+
+Every metric (17 rows) against every method (columns), point values only, no intervals.
+Label: tab:all_results. Meant for an appendix or supplementary material.
+
+table_gap_length.tex
+
+Gap closure rate (%) for each method, split by erased-segment length. Bins are under 8, 8-16, 16-32, 32-64 and 64 or more pixels; empty bins are dropped.
+Includes a column with the number of gaps in each bin.
+Label: tab:gap_length. It shows how performance falls as holes get longer, and that closing only works for gaps smaller than its kernel.
+
+main_table_values.csv
+
+Point estimates only: one row per method, one column per metric, values as fractions.
+The most convenient source for quoting exact numbers in the text.
+
+main_table_with_ci.csv
+
+The same metrics as text strings of the form "value [low, high]", in display units (percent for percentage metrics).
+
+paired_bootstrap_vs_baselines.csv
+
+Significance tests of Ours against each baseline, on four key metrics: Fill F1 (tau=0), Gap closure, Bucket acc. and Leak-free images.
+Columns:
+baseline, metric
+diff: Ours minus the baseline, as a fraction
+ci_lo, ci_hi: the 95% bootstrap interval of the difference
+p_one_sided: the share of bootstrap resamples where the difference is 0 or less
+The smallest reportable p-value is 1/1000 = 0.001, so a value of 0.001 should be read as p < 0.001.
+Where the difference is exactly 0 in every resample (for example, both methods at 0%), p = 1 and the comparison is not informative.
+Rows are missing where the metric is undefined for the baseline, such as Fill F1 for Input.
+
+gap_closure_by_length.csv
+
+The data behind table_gap_length.tex, including the empty bins.
+
+per_image_metrics.csv
+
+One row per (method, test image). Contains the raw counts behind every metric plus hole_frac, the fraction of the image's pixels that were erased.
+For analyses the tables do not cover: correlation with hole size, per-image distributions, choosing examples.
+Column meanings:
+tp, fp, fn: pixel counts of correct ink, false ink and missed ink.
+n_added_tX, good_added_tX, n_gap_tX, found_gap_tX: fill counts at tolerance X.
+n_input_ink, kept_ink: ink in the input, and how much of it the output kept.
+r_gt, r_pred, r_corr: region counts in the ground truth, the output and the input.
+r_exact, r_lost, r_recovered: the region-count match and the counts behind region recovery.
+n_gt_regions, bucket_ok, sum_best_iou, n_leaks, leak_free: the counts behind the paint-bucket metrics.
+n_gaps, gaps_closed: the erased-segment counts behind gap closure.
+
+summary.json
+
+Test-set description: number of test images, number of erased segments, mean hole fraction, image size.
+Model cost:
+params_M: parameters in millions.
+ms_per_image: inference time for one image in fp16 on the named GPU, including only the model's forward pass (no loading or binarization).
+peak_mem_gb: peak GPU memory during inference.
+Every evaluation setting, including thresholds, tolerances, the bucket IoU threshold, the gap-closed threshold and the closing kernel sizes.
+Software versions, and the point estimates for every method and metric.
+
+fig_qualitative.pdf/.png
+
+One row per preview test image (the fixed example images used throughout training), full image.
+Columns: Input, Closing (k=9), Ours (binarized), Ground truth, and an error map for Ours.
+Error map colours: black = correct ink, green = erased ink correctly redrawn, red = missed ink, blue = false ink. A legend is included.
+
+fig_qualitative_zoom.pdf/.png
+
+The same layout, cropped to a 224x224 pixel window centred on the largest erased segment in each image. Better for showing detail in the paper.
+
+fig_failure_cases.pdf/.png
+
+The same zoomed layout for the 3 test images where Ours has the lowest fill F1, among images with at least 200 erased pixels.
+Intended for an honest limitations discussion.
+May be absent if no image meets the condition.
+
+fig_gap_closure_by_length.pdf/.png
+
+Line plot of the share of gaps closed (%) against gap-length bin, one line per method, with Ours drawn thicker.
+
+fig_per_image_boxplots.pdf/.png
+
+Box plots across test images, one box per method, outliers hidden.
+Left panel: per-image fill F1 at tau=0. Right panel: per-image bucket accuracy.
+Shows variability and consistency, not only averages.
+
+model_weights.pt
+
+The evaluated model's weights (PyTorch state_dict), for reproducibility. May be left out of the downloaded zip.
+NOTES FOR WRITING THE PAPER
+The headline claim should rest on the paint-bucket metrics (Bucket acc., Leaks / image, Leak-free images) and on Gap closure, because they measure the actual goal. Fill P, R and F1 and Pixel F1 support the claim at pixel level.
+Pixel F1 and Pixel IoU are high even for the unrestored input, because most ink is untouched. They are not good at telling methods apart, and the text should not over-interpret them.
+Fill metrics at tau=0 are strict: a correctly placed stroke that is 1 pixel thicker is penalised. Report tau=2 next to it to show that most remaining error is about line thickness or position rather than missing structure.
+Morphological closing is a weak, classical baseline. Describe it as a mask-free, training-free sanity baseline, not the state of the art. Stronger comparisons, such as trapped-ball filling, endpoint-extension methods, a plain U-Net or ablations of the proposed model, are not in this folder.
+All numbers come from synthetic corruption on the held-out split, not from real-world broken line art. State this as a limitation.
+For reproducibility, use the exact settings recorded in summary.json.

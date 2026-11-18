@@ -1,0 +1,17 @@
+\begin{table}[t]
+\centering
+\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcccccccccc}
+\toprule
+Method & Fill P ($\tau$=0) $\uparrow$ & Fill R ($\tau$=0) $\uparrow$ & Fill F1 ($\tau$=0) $\uparrow$ & Fill F1 ($\tau$=2) $\uparrow$ & Pixel F1 $\uparrow$ & Ink ratio $\to 1$ & Gap closure $\uparrow$ & Bucket acc. (IoU$\geq$0.9) $\uparrow$ & Leaks / image $\downarrow$ & Leak-free images $\uparrow$ \\
+\midrule
+Input (no restoration) & -- & 0.0{\scriptsize$\pm$0.0} & -- & -- & 98.4{\scriptsize$\pm$0.0} & 0.968{\scriptsize$\pm$0.001} & 0.0{\scriptsize$\pm$0.0} & 64.1{\scriptsize$\pm$1.6} & 15.463{\scriptsize$\pm$0.662} & 0.1{\scriptsize$\pm$0.1} \\
+Closing (k=5) & 1.1{\scriptsize$\pm$0.1} & 1.8{\scriptsize$\pm$0.1} & 1.4{\scriptsize$\pm$0.1} & 11.6{\scriptsize$\pm$0.4} & 95.9{\scriptsize$\pm$0.1} & 1.021{\scriptsize$\pm$0.003} & 1.4{\scriptsize$\pm$0.2} & 37.6{\scriptsize$\pm$1.1} & 13.084{\scriptsize$\pm$0.579} & 0.2{\scriptsize$\pm$0.2} \\
+Closing (k=9) & 1.2{\scriptsize$\pm$0.1} & 6.3{\scriptsize$\pm$0.2} & 2.1{\scriptsize$\pm$0.1} & 25.2{\scriptsize$\pm$0.7} & 91.1{\scriptsize$\pm$0.4} & 1.129{\scriptsize$\pm$0.009} & 6.3{\scriptsize$\pm$0.4} & 22.8{\scriptsize$\pm$1.1} & 9.449{\scriptsize$\pm$0.430} & 0.3{\scriptsize$\pm$0.4} \\
+Ours & \textbf{73.6}{\scriptsize$\pm$1.0} & \textbf{84.0}{\scriptsize$\pm$0.6} & \textbf{78.5}{\scriptsize$\pm$0.7} & \textbf{92.8}{\scriptsize$\pm$0.5} & \textbf{99.3}{\scriptsize$\pm$0.0} & \textbf{1.004}{\scriptsize$\pm$0.000} & \textbf{70.5}{\scriptsize$\pm$0.9} & \textbf{94.7}{\scriptsize$\pm$0.4} & \textbf{1.467}{\scriptsize$\pm$0.137} & \textbf{45.0}{\scriptsize$\pm$3.0} \\
+\bottomrule
+\end{tabular}}
+\caption{Line restoration on the held-out test set (1000 images, 26141 erased segments). Percentages unless noted; $\pm$ is half the 95\% bootstrap CI. $\tau$: pixel tolerance. Bucket acc.: GT regions recovered with IoU$\geq$0.9. Leak: one predicted region spanning two GT regions.}
+\label{tab:main_results}
+\end{table}
