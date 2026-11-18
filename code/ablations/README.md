@@ -102,3 +102,36 @@ Paired bootstrap against `full` (1,000 resamples, `paired_bootstrap_vs_baselines
 - The released model, trained ~4× longer, is far ahead of the 1-epoch `full` on the
   structural metrics (gap closure 70.5 vs 42.2), so absolute numbers here are not
   comparable to the paper tables; only the differences between rows are.
+
+### Full-length results (9,155 steps)
+
+`full` and `no_attn28` retrained for 9,155 steps (167 and 139 min on a T4), 1,000 test
+images, tables in `paper/v1/results_ablations_9155/`.
+
+| Variant | Params | Fill F1 τ=0 | Fill F1 τ=2 | Gap closure | Bucket acc. | Leaks/img ↓ | Leak-free | ms/img |
+|---|---|---|---|---|---|---|---|---|
+| InkCloser (full) | 43.4M | 80.9 | 94.1 | 59.1 | 94.2 | 1.81 | 42.4 | 90 |
+| w/o 28×28 attention | 24.4M | 80.2 | 93.7 | 62.6 | 94.0 | 1.88 | 41.2 | 77 |
+| *InkCloser (released)* | 43.4M | 78.5 | 92.8 | 70.5 | 94.7 | 1.47 | 45.0 | 90 |
+
+Paired bootstrap, full − no_attn28 (95% CI):
+
+| Metric | 1 epoch (2,250 steps) | 9,155 steps |
+|---|---|---|
+| Fill F1 (τ=0) | +0.1 [−0.1, +0.3] | **+0.7** [+0.4, +1.0] |
+| Gap closure | **−1.9** [−2.5, −1.3] | **−3.6** [−4.2, −3.1] |
+| Bucket acc. | **−1.3** [−1.6, −1.1] | **+0.2** [+0.04, +0.4] |
+| Leak-free images | **−5.5** [−7.6, −3.4] | +1.2 [−0.8, +3.2] |
+
+- With the longer training the attention model overtakes on pixel-level fill (F1 +0.7)
+  and on bucket accuracy (+0.2, small but significant), and the leak-free gap disappears
+  (+1.2, n.s.). The "it just needs more training" explanation holds for those metrics.
+- On **gap closure** removing attention is still better, and the difference grew
+  (−1.9 → −3.6 points). So the bottleneck attention does not help close gaps at either
+  budget; its benefit is a modest gain in fill precision at the cost of 19M params and
+  ~15% inference time.
+- Both 9,155-step models are below the released checkpoint on gap closure (59.1 / 62.6
+  vs 70.5) despite the same step count, though `full` beats it on fill F1. The released
+  weights come from the original notebook run (unseeded, `--seed -1`), so run-to-run
+  variance on gap closure may be comparable to the ablation differences (untested); a
+  multi-seed run would be needed before claiming a ranking on that metric.

@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcccccccccc}
+\toprule
+Variant & Fill F1 ($\tau$=0) $\uparrow$ & Fill F1 ($\tau$=2) $\uparrow$ & Gap closure $\uparrow$ & Bucket acc. (IoU$\geq$0.9) $\uparrow$ & Leaks / image $\downarrow$ & Leak-free images $\uparrow$ & Ink kept $\uparrow$ & Ink ratio $\to 1$ & Params (M) & ms/img \\
+\midrule
+InkCloser (full) & 80.9{\scriptsize$\pm$0.6} & 94.1{\scriptsize$\pm$0.4} & 59.1{\scriptsize$\pm$1.2} & 94.2{\scriptsize$\pm$0.4} & 1.811{\scriptsize$\pm$0.18} & 42.4{\scriptsize$\pm$3.0} & 100.00 & 0.999{\scriptsize$\pm$0.00} & 43.4 & 90 \\
+w/o 28$\times$28 attention & 80.2{\scriptsize$\pm$0.6} & 93.7{\scriptsize$\pm$0.4} & 62.6{\scriptsize$\pm$1.0} & 94.0{\scriptsize$\pm$0.4} & 1.881{\scriptsize$\pm$0.18} & 41.2{\scriptsize$\pm$2.9} & 100.00 & 1.001{\scriptsize$\pm$0.00} & 24.4 & 77 \\
+InkCloser (released, paper) & 78.5{\scriptsize$\pm$0.7} & 92.8{\scriptsize$\pm$0.5} & 70.5{\scriptsize$\pm$0.9} & 94.7{\scriptsize$\pm$0.4} & 1.467{\scriptsize$\pm$0.14} & 45.0{\scriptsize$\pm$3.0} & 100.00 & 1.004{\scriptsize$\pm$0.00} & 43.4 & 90 \\
+\bottomrule
+\end{tabular}}
+\caption{Ablation study on the test set (1000 images). All variants are trained with the same reduced schedule (9155 steps, batch 4, same seed). Percentages unless noted; $\pm$ is half the 95\% bootstrap CI. Run time measured on a single image, fp16.}
+\label{tab:ablation}
+\end{table}
