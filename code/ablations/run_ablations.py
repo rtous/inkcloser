@@ -54,6 +54,8 @@ def is_trained(run_dir, args):
     ck = torch.load(p, map_location="cpu", weights_only=False)
     if args.check:
         return ck["global_step"] >= args.check_steps
+    if args.max_steps:
+        return ck["global_step"] >= args.max_steps
     return ck["epochs_done"] >= args.epochs_budget
 
 
@@ -73,6 +75,9 @@ def train_variant(key, args):
         argv += ["--resume", last]
     if args.check:
         argv += ["--max-steps", str(args.check_steps), "--log-every", "1"]
+    elif args.max_steps:
+        argv[argv.index("--stop-after") + 1] = "30"
+        argv += ["--max-steps", str(args.max_steps)]
     with open(os.path.join(os.makedirs(run_dir, exist_ok=True) or run_dir, "variant.json"), "w") as fh:
         json.dump(dict(key=key, label=label, model=opts, loss_args=loss_args), fh, indent=2)
     t0 = time.perf_counter()
@@ -241,6 +246,9 @@ def main():
     ap.add_argument("--results-dir", default=os.path.join(REPO, "paper", "v1", "results_ablations"))
     ap.add_argument("--epochs-budget", type=int, default=1,
                     help="epochs per variant (of the paper's 30-epoch cosine schedule)")
+    ap.add_argument("--max-steps", type=int, default=None,
+                    help="step budget per variant instead of --epochs-budget "
+                         "(e.g. 9155 = the released model's training length)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--reference-checkpoint", default="/content/checkpoints/inkcloser_paper.pt",
                     help="released paper model, added as a reference row ('' to skip)")

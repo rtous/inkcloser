@@ -27,6 +27,47 @@ tables go to `paper/v1/results_ablations/` (`table_ablation.tex`, `ablation_tabl
 and the standard paper tables / paired bootstrap against the full model). The script
 skips finished stages, so rerun it after an interruption.
 
+## Full-length runs (9,155 steps) and resuming after a disconnect
+
+The 1-epoch budget left the 28×28 attention question open (see Results), so `full` and
+`no_attn28` are retrained for the released model's length, 9,155 steps (4 epochs + 155
+steps of the 5th, same 30-epoch cosine schedule and seed). `--max-steps` replaces
+`--epochs-budget`; use a separate checkpoint root and results dir so the 1-epoch runs
+are not overwritten. About 5.5 h on a T4 (≈2.8 h `full`, ≈2.3 h `no_attn28`, plus eval).
+
+```bash
+python code/ablations/run_ablations.py --variants full no_attn28 --max-steps 9155 \
+    --ckpt-root /content/checkpoints/ablations_9155 \
+    --results-dir paper/v1/results_ablations_9155
+```
+
+The `released` reference row is added automatically (don't pass it in `--variants`).
+
+**Surviving a Colab reset.** A VM reset wipes `/content` (dataset, checkpoints, released
+weights). With Google Drive mounted, mirror the checkpoints to
+`MyDrive/inkrepair/tmp/ablations_9155/` while training runs:
+
+```bash
+nohup code/ablations/sync_to_drive.sh /content/checkpoints/ablations_9155 \
+    /content/drive/MyDrive/inkrepair/tmp/ablations_9155 > /content/sync.log 2>&1 &
+```
+
+`train.py` writes `last.pt` only at epoch ends (every 2,250 steps, ~41 min for `full`),
+so a disconnect loses at most the current epoch plus up to 5 min of sync lag.
+
+To resume in a fresh VM:
+
+1. Mount Drive in the notebook (`from google.colab import drive; drive.mount('/content/drive')`).
+2. `python code/download_dataset.py` (→ `/content/split`) and
+   `python code/download_checkpoint.py` (→ `/content/checkpoints/inkcloser_paper.pt`).
+3. Rerun the command above with `--ckpt-root /content/drive/MyDrive/inkrepair/tmp/ablations_9155`.
+   The runner resumes each variant from its `last.pt` and skips finished train/eval stages.
+   (Training straight onto Drive is fine for resuming; it just writes ~0.5 GB per epoch there.)
+4. Check progress in `<ckpt-root>/run.log` if the run was launched with
+   `nohup ... > <ckpt-root>/run.log 2>&1 &`.
+
+Note: a resumed run's `train_time.json` only covers the last session.
+
 ## Results
 
 Run on a Tesla T4 (Colab), 1,000 test images. All rows except the last are trained for
