@@ -1,7 +1,0 @@
-Highlights
-
-- A mask-free network locates and closes gaps in line art for paint-bucket coloring
-- Gated convolutions and two-scale self-attention let the network bridge long gaps
-- A gap-focused loss combines hole-weighted cross-entropy with global and local Dice
-- New metrics simulate the paint-bucket tool: gap closure, bucket accuracy and leaks
-- Bucket accuracy rises from 64.1% to 94.7%, and 45% of drawings become leak-free
