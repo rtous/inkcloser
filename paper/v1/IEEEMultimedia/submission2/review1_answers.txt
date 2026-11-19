@@ -1,0 +1,397 @@
+RESPONSE TO REVIEWERS
+Manuscript MM-2026-10-0109, "InkCloser: Line-Art Completion for Paint-Bucket Colorization"
+
+======================================================================
+GENERAL RESPONSE TO THE EDITOR
+======================================================================
+
+We thank the Editor and the three reviewers for their careful and constructive
+reading of our manuscript. The main changes are:
+
+1. Ablation study. A new section and table (Table 2) evaluate six variants of
+   InkCloser, from a plain U-Net trained with cross-entropy to variants without
+   each context module, without gated convolutions and without the local Dice
+   term.
+2. Metrics. Region matching, leaks and the gap-closure criterion are defined
+   precisely, and their scope is stated more carefully.
+3. Method and data. The loss, training settings and corruption protocol are
+   described more completely, and the contributions state the difference with
+   respect to Sasaki et al. more clearly.
+4. Claims. Statements about the attention modules and about the baselines have
+   been adjusted to the results.
+
+Changes are marked in blue in the annotated version of the manuscript.
+
+======================================================================
+REVIEWER 1
+======================================================================
+
+----------------------------------------------------------------------
+R1.1 (methodological novelty vs. Sasaki et al. and established components)
+----------------------------------------------------------------------
+The contributions paragraph of the introduction now states the main difference
+with respect to Sasaki et al.: our network preserves the intact strokes, whereas
+theirs regenerates the whole drawing, which creates new gaps (it keeps 94.1% of
+the input ink). The new ablation study provides experimental support for the
+individual components (see R1.2).
+
+----------------------------------------------------------------------
+R1.2 (component ablations)
+----------------------------------------------------------------------
+We added the requested ablation study (new section "Ablation study" and
+Table 2). It covers the four variants requested (without the 28x28 attention,
+without the 56x56 branch, with standard instead of gated convolutions, and
+without the local Dice term) and a plain U-Net trained with our loss and with
+cross-entropy only, reporting gap closure, bucket accuracy, leaks per image,
+fill F1, leak-free drawings and parameters, with 95% bootstrap confidence
+intervals. To keep the cost manageable, variants are trained for one epoch,
+except the comparison of the bottleneck attention, which needs the full training
+length and is run at it. In short: the local Dice term has the largest effect
+(-11.2 points of gap closure without it); gated convolutions mainly improve the
+accuracy of the added ink (-7.1 points of fill F1 without them); the 56x56 branch
+helps close gaps (-3.4 points); the bottleneck attention slightly improves fill
+F1 and bucket accuracy but does not help close gaps (+3.6 points without it),
+which we report as such; and the full architecture improves every metric of a
+plain U-Net trained with the same loss. We also revised the two sentences that
+attributed the improvement, and the closure of long gaps, to the attention
+modules, so that they agree with these results.
+
+----------------------------------------------------------------------
+R1.3 (input preservation as alternative explanation)
+----------------------------------------------------------------------
+The ablation study addresses this question with input-preserving models
+trained under the same budget. The plain U-Net, whose skip connections also let
+it copy the input, is the simple input-preserving completion model suggested by
+the reviewer. Trained with our loss, it closes 27.3% of the gaps, against 42.2%
+for InkCloser under the same budget, and its bucket accuracy is 84.8% against
+90.0%. Input preservation therefore explains part of the gain over Sasaki et
+al., and the architecture and loss account for a substantial further part.
+
+----------------------------------------------------------------------
+R1.4 (synthetic gaps; naturally damaged artwork)
+----------------------------------------------------------------------
+We agree that this is the main limitation of the study, and the "Lessons and
+limitations" section states it explicitly: real gaps caused by drawing,
+scanning, compression or line extraction may differ from our synthetic ones,
+and validating the approach on naturally occurring gaps and on other line
+styles, resolutions and stroke widths is the next step of this work. Building a
+benchmark of real damaged artwork with reliable leak annotations is beyond the
+scope of this revision.
+
+----------------------------------------------------------------------
+R1.5 (trapped-ball, Fourey et al., Delaunay Painting as comparators)
+----------------------------------------------------------------------
+Trapped-ball segmentation, the method of Fourey et al. and Delaunay Painting
+make the fill robust to gaps at coloring time: they produce a segmentation or a
+coloring, and Delaunay Painting and LazyBrush require user color hints. They do
+not restore the line art, so their output cannot be evaluated with the same
+metrics under the same assumptions (single automatic pass, no user input). As
+stated in the introduction, InkCloser is complementary to them: its restored
+line art is closed for any tool, including these. The statement about the
+baselines not improving on the input is now restricted to bucket accuracy (see
+R2, minor comment 7).
+
+----------------------------------------------------------------------
+R1.6 (80% gap-closure criterion and IoU-based bucket accuracy)
+----------------------------------------------------------------------
+We agree that pixel coverage does not guarantee topological closure, and the
+text now says so explicitly, noting that the two can disagree in both
+directions. For this reason, the paint-bucket metrics, which are topological,
+are now presented as the primary measure of success. Regarding bucket accuracy,
+the regions are not an approximation of flood filling: each region is a
+4-connected background area, exactly what a paint-bucket click without gap
+tolerance fills from any seed inside it. The IoU only decides whether that fill
+matches the original region. The text now states this, together with the
+precise matching and leak rules (see R2.3). A per-gap topological criterion is
+an interesting addition that we leave for future work.
+
+----------------------------------------------------------------------
+R1.7 (dataset generation protocol, deduplication, seeds)
+----------------------------------------------------------------------
+The dataset section now states the distribution of gap lengths (uniform
+between 4 and 60 pixels), that the skeleton only determines where ink is removed
+(each cut erases the full stroke width), and that the generation code, with all
+its parameters and random seeds, is released with the dataset. The released
+generator documents the remaining details (skeleton extraction and pruning,
+stub lengths, margins, eligibility and protection thresholds). The train/test
+split is made at the level of source images and is seeded; we did not perform an
+additional near-duplicate check across source images.
+
+----------------------------------------------------------------------
+R1.8 (training settings, convergence, variants seen, loss weights)
+----------------------------------------------------------------------
+The training section now reports the full settings: AdamW with learning rate
+1e-3 (3e-4 for the transformer blocks), weight decay 1e-4, cosine learning-rate
+schedule, gradient clipping at norm 1.0, mixed precision and batch size 4. There
+is no checkpoint selection: we use the model after the last training step.
+Regarding the corrupted variants, each pass over the data draws one of the six
+variants of every drawing at random, so the network sees several different
+variants of each drawing, combined with random geometric augmentation that makes
+every sample different. The loss weights were chosen in preliminary experiments;
+the text now says so, and the ablation study quantifies the effect of the local
+Dice term. Variability across training runs is discussed in the ablation study:
+two runs of the same configuration differ noticeably in gap closure, and we
+state that measuring this variance would require several runs per configuration.
+
+----------------------------------------------------------------------
+R1.9 (confidence intervals, bootstrap details, Figure 4 bin counts)
+----------------------------------------------------------------------
+The text now states the number of bootstrap resamples (1,000, paired across
+methods). All the improvements of InkCloser over every baseline in Table 1 are
+significant at p <= 0.001, the smallest value attainable with 1,000 resamples.
+The ablation table reports 95% confidence intervals for every value. Regarding
+Figure 4, the caption already notes that the last bin contains only 15 gaps, and
+we agree that it should not be read with the same confidence as the other bins.
+Variability across training runs is discussed in the ablation study (see R1.8).
+
+----------------------------------------------------------------------
+R1.10 (random failures, merged regions, extended intentional strokes)
+----------------------------------------------------------------------
+The "Visual quality and failures" paragraph describes the main failure modes:
+long missing stretches of curved contours whose shape cannot be inferred from
+their ends, and areas with many close, nearly parallel strokes. Since InkCloser
+keeps 99.9998% of the input ink, it practically never opens new gaps; the
+remaining topological errors are unrepaired gaps and, less often, added ink that
+closes a passage. Given the length limits, a figure of randomly selected
+failures and a separate count of each error type are left for future work.
+
+======================================================================
+REVIEWER 2
+======================================================================
+
+----------------------------------------------------------------------
+R2.1 (contributions)
+----------------------------------------------------------------------
+See R1.1. The contributions paragraph now states the difference with respect
+to Sasaki et al., and the ablation study supports the architectural and loss
+contributions experimentally.
+
+----------------------------------------------------------------------
+R2.2 (gap closure is not topological closure)
+----------------------------------------------------------------------
+We agree. The text now states that the 80% criterion measures redrawn ink
+rather than topological closure, that the two can disagree in both directions
+as the reviewer describes, and that the paint-bucket metrics, which are
+topological, are the primary measure of success.
+
+----------------------------------------------------------------------
+R2.3 (definitions of region and leak metrics; splits and disappearances)
+----------------------------------------------------------------------
+The metrics are now specified as implemented: regions are 4-connected
+background components (paired with 8-connected ink), the exterior background is
+included, and regions under 20 pixels are ignored; each ground-truth region is
+matched to the output region with the highest IoU (many-to-one matching is
+allowed, although IoU >= 0.9 makes it effectively one-to-one); bucket accuracy is
+pooled over all regions of all test images. "Most" is replaced by an explicit
+threshold: a leak occurs when an output region contains at least 50% of each of
+two ground-truth regions, and an output region that absorbs k regions counts as
+k-1 leaks. We agree that leak-free does not mean "no correction needed" and
+removed that equivalence; the text now notes that a leak-free drawing may still
+contain split regions or spurious strokes. Split and lost regions are already
+penalized by bucket accuracy, since such a region fails the IoU >= 0.9 match;
+given the length limits, we did not add separate statistics for them.
+
+----------------------------------------------------------------------
+R2.4 (ablations)
+----------------------------------------------------------------------
+Please see our answer to R1.2. The new Table 2 includes the configurations
+suggested by the reviewer: a standard U-Net with a basic loss (cross-entropy), a
+standard U-Net with the proposed loss, and variants without gated convolutions,
+without each attention branch and without the local Dice term, with region-level
+metrics and parameter counts.
+
+----------------------------------------------------------------------
+R2.5 (baselines; suggested references)
+----------------------------------------------------------------------
+We thank the reviewer for the two references, which are now cited and discussed
+in "Gap tolerance at coloring time" (Allen et al., SIGGRAPH Asia 2024 Technical
+Communications; Asrin et al., ICSINTESA 2025). To stay within the limit of 20
+references, we removed two less relevant ones. Both are training-free methods
+that make coloring robust to gaps, in the same family as trapped-ball
+segmentation and the method of Fourey et al.; as explained in R1.5, such methods
+are complementary to ours. Regarding the two Sasaki et al. configurations, the text presents them as
+two ways of evaluating the same method (released weights and retraining on our
+data). The standard U-Net reference is now included in the ablation study.
+
+----------------------------------------------------------------------
+R2.6 (real gaps and negative cases)
+----------------------------------------------------------------------
+Please see R1.4. Regarding negative cases, the test drawings already contain
+many intentional stroke endings and narrow passages that are not erased, and the
+results indicate that InkCloser rarely extends or closes them: its ink ratio is
+1.004 and more than 91% of the ink it adds lies within two pixels of the true
+strokes. A dedicated evaluation on intact drawings and naturally occurring gaps
+is part of the future work stated in the limitations.
+
+----------------------------------------------------------------------
+R2.7 (loss functions and notation)
+----------------------------------------------------------------------
+The text now clarifies the main points, and the full definition is as follows.
+The network outputs a background logit z; the background probability is
+sigmoid(z) and the ink probability is p = 1 - sigmoid(z). The hole mask contains
+the pixels that are ink in the target and background (> 0.9) in the input. The
+weighted cross-entropy is computed on the background probability against the
+clean target, with weight 3 on hole pixels and 1 elsewhere, averaged over all
+pixels (weights are not renormalized). Both Dice terms are computed on the ink
+probability p against the binarized target ink (gray level < 0.5), per image with
+smoothing constant 1, and averaged over the batch. The local Dice term multiplies
+p and the target by a neighborhood mask obtained by max-pooling the hole mask with
+a 15x15 window, i.e. all pixels within r = 7 pixels of an erased pixel; the text
+now uses this description, consistent with Figure 2. For samples without gaps the
+local term is zero. Total loss: L = L_BCE + L_Dice + 0.5 L_localDice. Given the
+length limits, the equations are not included in the article.
+
+----------------------------------------------------------------------
+R2 Minor comments
+----------------------------------------------------------------------
+m1. The difference is computed from unrounded values (94.75 - 36.36 = 58.39).
+    The text now says so.
+m2. This is the fraction of regions merged by the gaps (ground-truth region
+    count minus input region count, summed over images) that are separated
+    again in the output. Unlike bucket accuracy, it only counts regions and does
+    not check their shape. The text now states this.
+m3. The Figure 2 caption now specifies the head: three 3x3 convolutions with 16,
+    16 and 1 output channels. We agree that skip connections do not guarantee
+    that intact strokes are copied, and rephrased the text accordingly; the
+    measured ink retention (99.9998%) is the empirical evidence.
+m4. The network runs in half precision except for the transformer blocks, which
+    run in single precision for numerical stability. The "Speed" paragraph now
+    says so and gives the measurement conditions (batch of one, mean of 50
+    forward passes after 10 warm-up passes, peak allocated GPU memory).
+m5. Agreed. The Figure 4 caption now describes gap length as a proxy for spatial
+    extent rather than the length of the missing stroke.
+m6. The paint-bucket metrics are computed on actual flood-fill regions: each
+    region is a 4-connected background area, exactly what a bucket click
+    without gap tolerance fills from any seed inside it. The text now says this
+    explicitly. Leaks and merged regions are therefore measured on real fills
+    rather than on a proxy; given the length limits, we did not add a further
+    figure.
+m7. Agreed. The abstract and conclusion now restrict the statement to the
+    fraction of correctly fillable regions (bucket accuracy), which all
+    baselines lower.
+
+======================================================================
+REVIEWER 3
+======================================================================
+
+----------------------------------------------------------------------
+R3.1 (real-world gap distributions)
+----------------------------------------------------------------------
+Please see R1.4. The limitation is stated explicitly in the article, and
+validation on scanned and naturally broken line art is the next step of this
+work.
+
+----------------------------------------------------------------------
+R3.2 (ablation study)
+----------------------------------------------------------------------
+Please see our answer to R1.2 and the new Table 2, which isolates the gated
+convolutions, the 28x28 attention, the 56x56 branch (dilated residual blocks and
+attention) and the local Dice term.
+
+----------------------------------------------------------------------
+R3.3 (low closure of gaps shorter than 8 pixels)
+----------------------------------------------------------------------
+The text explains that this is largely an effect of the closure criterion: for
+a gap of a few pixels, a completion that is one pixel thinner or offset fails to
+cover 80% of it, whereas the same error is negligible for a long gap. The
+remaining short-gap failures are mostly short junction stubs, where the network
+must decide whether a stroke ends on purpose just short of another line. As a
+remedy, the limitations section proposes weighting the loss towards gaps that
+actually merge regions, which directly targets the short gaps that cause leaks.
+
+----------------------------------------------------------------------
+R3.4 (only five epochs; convergence)
+----------------------------------------------------------------------
+The training section now reports the full settings, and states that the model
+after the last training step is used, without checkpoint selection (see R1.8).
+Each pass over the data contains about 2,250 optimizer steps at 896x896 pixels,
+with random corrupted variants and augmentation. The ablation study shows that
+the structural metrics benefit considerably from longer training (gap closure
+42.2% after one epoch vs. 70.5% for the reported model). Further training could
+improve the results further, which would only strengthen the conclusions of the
+comparison with the baselines.
+
+----------------------------------------------------------------------
+R3.5 (diffusion-based or blind inpainting baselines)
+----------------------------------------------------------------------
+Generative and diffusion-based inpainting models require the mask of the
+missing region, which is exactly what is unknown here, and blind inpainting
+methods such as VCNet target photographs, where the damage differs in appearance
+from the image content, whereas a gap in line art looks exactly like background.
+Moreover, generative models regenerate image content, and our results show that
+any change to intact strokes creates new gaps (see the retrained Sasaki et al.
+network, which keeps only 94.1% of the input ink). We added a sentence to the
+evaluation section explaining why these models are not included.
+
+----------------------------------------------------------------------
+R3.6 (resolution and aspect ratio)
+----------------------------------------------------------------------
+The convolutional parts of the network are independent of resolution, while the
+attention modules are configured for fixed grid sizes, so drawings of other
+sizes or aspect ratios can be processed by padding and resizing or, for large
+canvases, by overlapping tiles. The limitations section states that all results
+were obtained at a single resolution, and evaluating other resolutions is part
+of the future work stated there.
+
+----------------------------------------------------------------------
+R3.7 (stroke thickness)
+----------------------------------------------------------------------
+The drawings are not reduced to one-pixel lines: the skeleton is used only to
+decide where to cut, each cut removes the full width of the stroke, and both the
+input and the target keep the original stroke widths of the source drawings. The
+dataset section now says so. Evaluation on other stroke weights and brush
+textures is part of the future work stated in the limitations.
+
+----------------------------------------------------------------------
+R3.8 (local Dice weight of 0.5)
+----------------------------------------------------------------------
+The weight was chosen in preliminary experiments, and the text now says so
+without claiming that it is optimal. The new ablation study quantifies the
+effect of the term: removing it reduces gap closure by 11.2 points and bucket
+accuracy by 5.0 points, the largest effect of any component.
+
+----------------------------------------------------------------------
+R3.9 (failures on long curved contours)
+----------------------------------------------------------------------
+These failures occur when a long part of a curved contour is missing and its
+shape cannot be inferred from its two ends (for instance, the lobe of a leaf),
+as stated in the "Visual quality and failures" paragraph. The problem is
+ambiguous rather than limited by the receptive field, since the bottleneck
+attention gives every position access to the whole image; in these cases the
+network leaves the gap open rather than guessing, which is preferable for
+coloring. Shape priors learned from larger, domain-specific data, or user hints
+for such gaps, are possible remedies.
+
+----------------------------------------------------------------------
+R3.10 (inference time)
+----------------------------------------------------------------------
+InkCloser is meant as a preprocessing step that runs once per drawing before
+coloring, not at every brush stroke, so it does not need real-time rates; 92 ms
+on a T4 GPU is imperceptible in that workflow, as stated in the "Speed"
+paragraph. Further speed-ups are possible with standard deployment tools (e.g.
+ONNX/TensorRT export and batching), which we leave for future work.
+
+----------------------------------------------------------------------
+R3.11 (peak memory)
+----------------------------------------------------------------------
+A peak of 1.24 GB fits in the GPU memory of current artist workstations and
+most laptops. Further reductions are possible with integer quantization and
+memory-efficient attention, which we leave for future work.
+
+----------------------------------------------------------------------
+R3.12 (parallel processing)
+----------------------------------------------------------------------
+All operations of the network (convolutions and attention) are standard batched
+tensor operations that run in parallel on GPUs, and drawings are processed
+independently, so throughput scales with batch size in batch-processing
+environments. Given the length limits, we kept this to the response.
+
+----------------------------------------------------------------------
+R3.13 (complexity of transformer blocks vs. lighter alternatives)
+----------------------------------------------------------------------
+The new ablation (Table 2) compares the full model with lighter variants and
+reports their parameter counts: without the 56x56 branch (35.1 M), without the
+28x28 attention (24.4 M) and a plain U-Net (10.2 M). The plain U-Net is clearly
+worse on every metric, and removing the 56x56 branch lowers gap closure. The
+bottleneck attention (19 M parameters) slightly improves fill F1 and bucket
+accuracy but not gap closure, and the text now reports this openly.

@@ -19,7 +19,7 @@
 \author{Ruben Tous \\ Computer Architecture Department \\ Universitat Polit\`ecnica de Catalunya \\ Barcelona, Spain \\ \texttt{ruben.tous@upc.edu}}
 \date{}
 
-\begin{document}  
+\begin{document}   
 
 \maketitle
 
@@ -60,12 +60,13 @@ error map.}
 
 The problem is similar to image inpainting, with the key difference that the regions to be filled are not known at inference time. The model must implicitly locate the gaps and close them, while leaving the rest of the drawing unchanged, which makes this a blind, or mask-free, restoration task. A particular difficulty is that not every discontinuity in a line drawing is a defect. Line art routinely contains strokes that end freely by design (e.g. interior detail lines such as folds, wrinkles, etc.). Whether an opening is a gap to be closed or an intentional stroke ending cannot be decided from local geometry alone and can only be learned from examples of complete, correctly closed line art. 
 
-To obtain such examples, we collected images from repositories of coloring pages, which are made specifically to be filled region by region. We generated corrupted inputs by synthetically erasing segments of their ink. We use the resulting dataset to train a network that combines local convolutional processing with global attention, so that it can bridge gaps much longer than a local filter's reach. Because the erased strokes are a tiny fraction of the image, we design the loss function so that the training signal concentrates on them. The contributions of this work are: 
+To obtain such examples, we collected images from repositories of coloring pages, which are made specifically to be filled region by region. We generated corrupted inputs by synthetically erasing segments of their ink. We use the resulting dataset to train a network that combines local convolutional processing with modules that provide image-wide context, intended to help it bridge gaps longer than a local filter's reach. Because the erased strokes are a tiny fraction of the image, we design the loss function so that the training signal concentrates on them. The contributions of this work are: 
 
 \begin{itemize}
 \item A network architecture for mask-free gap closing in line art, which
-  locates and bridges gaps without a hole mask, with the goal of enabling
-  flood-fill coloring.
+  locates and bridges gaps without a hole mask while preserving the intact strokes
+  of the input, unlike prior mask-free restoration \citep{sasaki2017joint}, which
+  regenerates the whole drawing, with the goal of enabling flood-fill coloring.
 \item A loss function that combines hole-weighted cross-entropy with global and
   gap-local Dice terms, focusing training on the erased strokes while preserving
   the intact drawing.
@@ -108,7 +109,9 @@ contour curvature and close gaps with splines and straight segments, subject to
 geometric constraints. Their algorithm is the basis of the line-art detection mode
 of the bucket fill tool in GIMP. Delaunay Painting \citep{parakkat2022delaunay} builds a
 Delaunay triangulation of the contours and propagates user color hints over it,
-which makes coloring robust to large gaps. These methods prevent leaks at coloring
+which makes coloring robust to large gaps. More recently, \citet{allen2024leak}
+make trapped-ball segmentation faster and more resistant to leaks, and
+\citet{asrin2025gap} close gaps deterministically before colorization. These methods prevent leaks at coloring
 time, but they either do not restore the missing strokes or close them with
 hand-designed geometric rules and size thresholds. Recent work also addresses the
 opposite problem of small regions left \emph{unpainted} after bucket filling:
@@ -186,9 +189,12 @@ the first few pixels of the arriving line while keeping the other line intact. T
 reproduces a common defect of hand-drawn line art, in which a stroke stops just
 short of the line it should touch, and is applied to between 50\% and 100\% of the
 eligible junctions of each image. The second stage cuts gaps in the middle of
-strokes. To keep the drawings recognizable, at most 35\% of any stroke segment and
+strokes, with lengths drawn uniformly between 4 and 60 pixels. The skeleton only
+determines where ink is removed: each cut erases the full width of the stroke, and
+both the corrupted and the clean image keep the original stroke widths. To keep the drawings recognizable, at most 35\% of any stroke segment and
 25\% of any connected shape is removed, and small shapes such as eyes or highlights
-are never corrupted.
+are never corrupted. The generation code, with all its parameters and random seeds,
+is released with the dataset.
 
 The base images are split into 9\,000 for training and 1\,000 for testing. Each
 training image has 6 corrupted variants (54\,000 pairs), and each test image has a
@@ -247,7 +253,7 @@ convolution, each followed by Group Normalization and a ReLU. The output of each
 stage is concatenated with the encoder features of the same resolution before
 entering the next stage. The last stage, which returns to $896\times 896$, consists
 of the transposed convolution only. After concatenation with the full-resolution
-encoder features, a head of three $3\times 3$ convolutions produces a
+encoder features, a head of three $3\times 3$ convolutions, with 16, 16, and 1 output channels, produces a
 single-channel logit map at the input resolution.  
 
 Gaps can be long relative to the stroke width and to the receptive field of a stack
@@ -320,7 +326,10 @@ The total loss is
   + \beta_{\mathrm{gap}} L_{\mathrm{gap\,dice}},
 \end{equation}
 with $\beta_{\mathrm{bce}} = 1.0$, $\beta_{\mathrm{dice}} = 1.0$, and
-$\beta_{\mathrm{gap}} = 0.5$. In preliminary experiments, a much larger hole weight
+$\beta_{\mathrm{gap}} = 0.5$. Both Dice terms are computed per image, with
+$\epsilon = 1$, and averaged over the batch. The weights were chosen in preliminary
+experiments, and we do not claim that they are optimal; the effect of removing the
+gap Dice term is quantified in Section~\ref{sec:ablation}. In preliminary experiments, a much larger hole weight
 ($\lambda_h = 8$) caused the network to over-predict ink outside the hole regions;
 the milder weight of 3, combined with the Dice terms, gave a better balance between
 filling gaps and preserving the rest of the drawing.
@@ -333,7 +342,8 @@ $3\times 10^{-4}$ for the parameters of the two attention modules. The learning
 rate is decayed with a cosine annealing schedule \citep{loshchilov2017sgdr}. Training uses mixed-precision forward and backward passes
 with gradient scaling, and gradients are clipped to a maximum norm of 1.0. The batch
 size is 4, giving 2\,250 optimization steps per pass over the 9\,000 training images.
-The reported model was trained for 5 epochs.
+The reported model was trained for 5 epochs, and we use the model after the last
+training step, without checkpoint selection.
 
 \section{Evaluation Protocol and Metrics}
 \label{sec:metrics}
@@ -348,7 +358,8 @@ paint-bucket tool would fill. Global pixel metrics are reported for reference.
 
 All metrics are computed on the binarized output. A pixel is ink if its value is
 below 0.5 on a $[0,1]$ scale, and the network's probability map is thresholded at
-0.5. A region is a 4-connected component of background pixels, which pairs correctly
+0.5. A region is a 4-connected component of background pixels, including the exterior
+background, which pairs correctly
 with 8-connected ink strokes; background components smaller than 20 pixels are
 ignored, since they are specks rather than paintable regions. Unless
 noted otherwise, metrics are pooled over the whole test set (micro-averaged). Counts
@@ -377,8 +388,13 @@ spurious ink is added, and below 1 when ink is missing.
 \paragraph{Gap closure.} An erased segment is an 8-connected component of the
 ground-truth hole region, ignoring components of fewer than 4 pixels. A segment is
 counted as closed if at least 80\% of its pixels are ink in the output. Gap closure is
-the fraction of erased segments that are closed. The length of a segment is the
-longer side of its bounding box, in pixels, which we use to analyze performance as a
+the fraction of erased segments that are closed. This criterion measures redrawn
+ink rather than topological closure: a covered segment can still leave a thin opening
+through which a fill leaks, and a thinner or slightly displaced stroke can close a
+gap without covering 80\% of it. The region and paint-bucket metrics below measure
+closure topologically and are the primary measures of success. The length of a segment is the
+longer side of its bounding box, in pixels, a proxy for its spatial extent rather than
+the arc length of the missing stroke, which we use to analyze performance as a
 function of gap size.
 
 \paragraph{Region and paint-bucket metrics.} These metrics measure the practical goal
@@ -396,8 +412,9 @@ IoU} is the average best-match IoU over all ground-truth regions. Finally, a
 \emph{leak} occurs when one output region contains at least 50\% of each of two or
 more ground-truth regions, so that a single bucket fill would spill across them; an
 output region that absorbs $k$ ground-truth regions counts as $k-1$ leaks. We report
-the mean number of \emph{leaks per image} and the fraction of \emph{leak-free images},
-that is, drawings that are fully ready to color without manual correction.
+the mean number of \emph{leaks per image} and the fraction of \emph{leak-free images}.
+A leak-free image may still contain split regions, lost regions, or spurious strokes,
+which lower bucket accuracy, so it may still require minor corrections.
 
 \paragraph{Statistical analysis.} We report 95\% percentile bootstrap confidence
 intervals \citep{efron1994bootstrap} computed over test images (1\,000 resamples).
@@ -406,7 +423,9 @@ paired, and we report one-sided paired bootstrap tests of the proposed method ag
 each baseline.
 
 \paragraph{Baselines.} As no mask is available at inference time, mask-guided
-inpainting methods are not directly applicable. We compare against the following
+inpainting methods, including generative and diffusion-based ones, are not directly
+applicable, and blind inpainting methods designed for photographs target corruption
+that, unlike a gap in line art, differs in appearance from the image content. We compare against the following
 methods, all of which operate under the same mask-free, single-image setting and are
 evaluated on exactly the same test pairs with the same metric code:
 \begin{itemize}
@@ -477,7 +496,7 @@ ground-truth regions can be filled correctly with a single bucket click, each im
 has on average 15.5 leaks, and only 1 of the 1\,000 images is leak-free. After
 restoration with our model, bucket accuracy rises to 94.7\%, the number of leaks per
 image drops by 90.5\% to 1.47, and 45.0\% of the drawings (450 images) are entirely
-leak-free and ready to color without any manual correction. Most restored images have few leaks: 66.9\% have at most one leak and
+leak-free. Most restored images have few leaks: 66.9\% have at most one leak and
 78.5\% have at most two, compared with a median of 13 leaks per image on the input.
 Of the 15\,458 regions that the gaps merge across the test set, 94.0\% are separated
 again, and the mean best-match IoU of the ground-truth regions rises from 70.9\% to
@@ -527,8 +546,8 @@ results also vary strongly between images (Figure~\ref{fig:boxplots}): its per-i
 bucket accuracy spans the whole range from 0 to 1, with a median of 48.3\%, whereas
 ours has a median of 96.4\%. Since this variant uses the same training data,
 augmentation, and test protocol as our model, the difference between the two, 49.7
-percentage points in gap closure and 58.4 in bucket accuracy, reflects the combined
-effect of our architecture and training objective. We attribute this to the skip connections and gated convolutions, which allow intact strokes to pass through unchanged (our model keeps 99.9998\% of the input ink), and to the attention modules and the hole-focused loss, which focus its capacity on the gaps.
+percentage points in gap closure and 58.4 in bucket accuracy (computed from unrounded values), reflects the combined
+effect of our architecture and training objective. The skip connections and gated convolutions make it easy for intact strokes to pass through unchanged, although they do not guarantee it (our model keeps 99.9998\% of the input ink), and the hole-focused loss concentrates training on the gaps; the contribution of each component is quantified in Section~\ref{sec:ablation}.
 
 \paragraph{Statistical significance.} Our model outperforms the input, both closing
 variants, and both Sasaki et al.\ variants on all four key metrics (fill F1, gap
@@ -595,7 +614,7 @@ Sasaki et al.\ network closes between 23.8\% and 31.8\% of the gaps in each bin 
 below 8 pixels to 43.3\% between 32 and 64 pixels. Neither variant closes any of the
 15 gaps of 64 pixels or more. Our model closes between 76.6\% and 80.0\% of the gaps
 in every length bin from 8 pixels upwards, including 77.9\% of the 2\,226 gaps between
-32 and 64 pixels and 12 of the 15 longest gaps, which is consistent with the long-range context provided by the dilated stack and the two attention modules allowing it to bridge gaps much longer than the receptive field of a local filter. Its closure rate
+32 and 64 pixels and 12 of the 15 longest gaps. The ablation study (Section~\ref{sec:ablation}) shows that this does not depend on the bottleneck attention: a variant without it closes more gaps in every length bin from 8 to 64 pixels. Its closure rate
 is lowest, 44.5\%, for the shortest segments (under 8 pixels), although it is still
 the highest of all methods in that bin. We hypothesize that this is mainly an effect
 of the closure criterion: for a segment of only a few pixels, a completion that is
@@ -685,9 +704,10 @@ ink blobs that closing creates.
 \end{figure}
 
 \paragraph{Computational cost.} Our model has 43.4\,M parameters. Inference on one
-$896\times 896$ image takes 91.6\,ms in half precision on an NVIDIA Tesla T4 GPU
-(forward pass only, excluding loading and binarization), with a peak GPU memory use
-of 1.24\,GB, which makes it practical as an interactive preprocessing step before
+$896\times 896$ image takes 91.6\,ms in half precision, with the attention modules in
+single precision, on an NVIDIA Tesla T4 GPU (forward pass only, excluding loading and
+binarization; batch of one, mean of 50 passes after 10 warm-up passes), with a peak
+allocated GPU memory of 1.24\,GB, which makes it practical as an interactive preprocessing step before
 coloring. The Sasaki et al.\ network is considerably lighter, with 5.5\,M parameters
 and a peak memory use of 0.13\,GB; on the same GPU it takes 11.3\,ms per image in
 half precision and 23.0\,ms in single precision, in both cases including the transfer

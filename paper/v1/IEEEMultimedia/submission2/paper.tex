@@ -18,6 +18,7 @@
 \setcounter{secnumdepth}{0}
 
 \begin{document}
+\bstctlcite{IEEEexample:BSTcontrol}
 
 \sptitle{Feature Article: Line-Art Gap Closing}
 
@@ -37,7 +38,7 @@ network combines gated convolutions with self-attention at two resolutions and i
 to an artist: whether gaps are closed and whether one click fills each region. On
 1,000 test drawings, InkCloser closes 70.5\% of the gaps, raises the fraction of
 correctly fillable regions from 64.1\% to 94.7\%, and makes 45.0\% of the drawings
-leak-free, whereas morphological closing and a prior learned method do not improve on the input.
+leak-free, whereas morphological closing and a prior learned method lower the fraction of correctly fillable regions of the input.
 \end{abstract}
 
 \maketitle
@@ -84,7 +85,8 @@ stroke ending cannot be decided from local geometry alone; it has to be learned 
 many examples of complete, correctly closed drawings.
 
 Our contributions are a network architecture that locates and bridges gaps without
-a mask; a loss function that concentrates training on the missing strokes;
+a mask while preserving the intact strokes, unlike prior mask-free
+restoration~\cite{sasaki2017joint}, which regenerates the whole drawing; a loss function that concentrates training on the missing strokes;
 evaluation metrics that simulate the paint-bucket tool instead of counting correct
 pixels; and a public dataset of 55,000 broken and clean line-art pairs~\cite{datasetInkCloser},
 released together with the code and trained model~\cite{codeInkCloser}.
@@ -110,7 +112,9 @@ treats coloring from user scribbles as an optimization that tolerates small gaps
 and the method of Fourey et al.~\cite{fourey2018flat}, which underlies the line-art
 mode of the bucket tool in GIMP, extends stroke endpoints with splines and segments.
 Delaunay Painting~\cite{parakkat2022delaunay} propagates user color hints over a
-triangulation of the contours and is robust to large gaps. These tools prevent leaks
+triangulation of the contours and is robust to large gaps. More recent methods make
+trapped-ball segmentation faster and more leak-resistant~\cite{allen2024leak} or
+close gaps deterministically before coloring~\cite{asrin2025gap}. These tools prevent leaks
 at coloring time, but they either do not restore the missing strokes or close them
 with hand-designed geometric rules and size thresholds. Recent work on the opposite
 problem, small regions left unpainted after bucket filling~\cite{kono2026gapfill},
@@ -119,13 +123,13 @@ shows that the paint-bucket workflow is still an active research topic.
 \textbf{Learned line-art restoration.} The closest work to ours is that of Sasaki et
 al.~\cite{sasaki2017joint}, who train a fully convolutional network on synthetically
 corrupted drawings to detect and fill gaps jointly, without a mask. Related cleanup
-tasks, such as sketch simplification~\cite{simoserra2016simplify}, aim at visually
+tasks, such as sketch simplification, aim at visually
 clean drawings. Our objective is different: we design and evaluate the system for
 flood-fill coloring, that is, for whether regions end up correctly closed.
 
 \textbf{Why closed regions matter downstream.} Recent learning-based tools for 2D
 animation colorize a drawing region by region, for instance by matching the regions
-of a frame to those of reference frames~\cite{casey2021animation,dai2024inclusion}.
+of a frame to those of reference frames~\cite{dai2024inclusion}.
 For such tools, a single gap merges two regions and corrupts the color of both.
 InkCloser can serve as a preprocessing step that supplies the closed contours these
 tools assume.
@@ -143,9 +147,13 @@ We then broke the drawings synthetically, working on the skeleton (the one-pixel
 centerline) of the strokes. A first step targets T-junctions, where one line meets
 another: it erases the first few pixels of the arriving line, reproducing the common
 hand-drawing defect of a stroke that stops just short of its target. A second step
-cuts gaps in the middle of strokes. To keep the drawings recognizable, no more than
+cuts gaps in the middle of strokes, with lengths drawn uniformly between 4 and 60
+pixels. The skeleton only decides where to cut: each cut removes the full width of the
+stroke, and both images keep the original stroke widths. To keep the drawings
+recognizable, no more than
 35\% of a stroke and 25\% of a connected shape is removed, and small shapes such as
-eyes or highlights are never touched.
+eyes or highlights are never touched. The generation code, with all its parameters
+and random seeds, is released with the dataset.
 
 The images were split into 9,000 for training and 1,000 for testing. Each training
 image has six differently broken versions, one of which is picked at random every
@@ -162,7 +170,7 @@ an encoder progressively reduces the image from $896\times 896$ to $28\times 28$
 pixels while increasing the number of feature channels from 16 to 512, and a decoder
 brings it back to full resolution. Skip connections pass the encoder features at each
 resolution directly to the decoder, which makes it easy for the network to copy
-intact strokes to the output unchanged. This matters, because any stroke the network
+intact strokes to the output unchanged, although it does not guarantee it. This matters, because any stroke the network
 weakens becomes a new gap.
 
 \begin{figure*}
@@ -172,7 +180,9 @@ mask by a U-Net whose encoder uses gated convolutions. Global context is added b
 transformer blocks at the $28\times 28$ bottleneck and by a dilated residual stack
 followed by three transformer blocks on the $56\times 56$ skip connection. The
 training loss (dashed) uses the target and the hole mask derived from the
-input-target pair. Numbers next to each block give resolution$^2$ and channels.}
+input-target pair. Numbers next to each block give resolution$^2$ and channels. The
+output head (``Conv $\times$3'') consists of three $3\times 3$ convolutions with 16, 16,
+and 1 output channels.}
 \label{fig:overview}
 \end{figure*}
 
@@ -205,22 +215,28 @@ A naive training loss would teach the network very little about gaps. Ink covers
 a small fraction of a drawing, and the missing ink an even smaller one, so a network
 that simply copies its input already looks nearly perfect pixel by pixel. We
 therefore combine three terms. Because the training pairs tell us exactly which
-pixels were erased, we can use this ``hole mask'' during training, even though it is
+pixels were erased (ink in the clean drawing, background in the broken one), we can
+use this ``hole mask'' during training, even though it is
 not available at inference time.
 
 The first term is a standard pixel-wise cross-entropy against the clean drawing, in
 which erased pixels count three times as much as the others. The second is a Dice
 loss~\cite{milletari2016vnet}, which measures the overlap between predicted and true
-ink over the whole image and is insensitive to how much background there is. The
-third applies the same Dice loss only to a 15-pixel-wide neighborhood around the
-erased segments, so that the network is rewarded specifically for completing the
+ink over the whole image and is insensitive to how much background there is; since
+the network predicts background probabilities, the Dice terms use their complement,
+the ink probability. The third term applies the same Dice loss only to the pixels
+within 7 pixels of the erased segments ($r=7$ in Figure~\ref{fig:overview}), so that the network is rewarded specifically for completing the
 strokes, regardless of how well it reproduces the rest of the image. In early
 experiments, weighting erased pixels much more heavily made the network add spurious
-ink around the gaps; the combination above balances closing gaps against preserving
+ink around the gaps; the combination above, with weights 1, 1, and 0.5 for the three
+terms, chosen in preliminary experiments, balances closing gaps against preserving
 the drawing.
 
-The network was trained for five epochs with the AdamW optimizer, mixed-precision
-arithmetic, and a batch size of four.
+The network was trained for five epochs with the AdamW optimizer (learning rate
+$10^{-3}$, and $3\times 10^{-4}$ for the transformer blocks; weight decay $10^{-4}$),
+a cosine learning-rate schedule, gradient clipping, mixed-precision arithmetic, and
+a batch size of four. We use the model after the last training step, without
+checkpoint selection.
 
 \section{MEASURING WHAT ARTISTS CARE ABOUT}
 
@@ -237,20 +253,29 @@ thick (above 1) or too thin (below 1).
 
 \textbf{Gaps.} Each connected piece of erased ink is one gap; there are 26,141 in the
 test set. A gap counts as closed if at least 80\% of its pixels are ink in the
-output. \emph{Gap closure} is the fraction of closed gaps.
+output. \emph{Gap closure} is the fraction of closed gaps. This criterion measures
+redrawn ink, not topological closure: a covered gap can still let a fill through a
+thin opening, and a thinner stroke can close a gap without covering 80\% of it. The
+paint-bucket metrics below are therefore the primary measure of success.
 
 \textbf{Paint-bucket behavior.} These metrics simulate the coloring tool directly.
-Each region of the original drawing is matched to the output region that overlaps it
-best, and is counted as correctly fillable if their overlap (intersection over
+The regions of a drawing are its 4-connected background areas, including the
+exterior, exactly the areas that a paint-bucket click without gap tolerance fills;
+areas under 20 pixels are ignored. Each region of the original drawing is matched to
+the output region that overlaps it best (several may match the same one), and is counted as correctly fillable if their overlap (intersection over
 union) is at least 0.9. \emph{Bucket accuracy} is the fraction of correctly fillable
-regions, roughly the fraction of regions a user could color with one click. A
-\emph{leak} occurs when one output region swallows most of two original regions, so
-that a single click would spill across them. We report the average number of leaks
-per image and the fraction of \emph{leak-free} drawings, which are ready to color
-without any manual correction.
+regions over all test drawings, roughly the fraction of regions a user could color with one click. A
+\emph{leak} occurs when one output region contains at least half of each of two
+original regions, so that a single click would spill across them; an output region
+that absorbs $k$ original regions counts as $k-1$ leaks. We report the average
+number of leaks per image and the fraction of \emph{leak-free} drawings. A leak-free
+drawing may still contain split regions or spurious strokes, which lower bucket
+accuracy, and thus need minor corrections.
 
 We compare InkCloser with three baselines, all of which, like our method, receive
-only the broken image. The unrestored input shows how much damage the gaps cause.
+only the broken image. Mask-guided inpainting models, including diffusion-based ones,
+are not applicable because they need the mask of the gaps, and blind inpainting
+methods target photographs, as discussed above. The unrestored input shows how much damage the gaps cause.
 Morphological closing with a 5- or 9-pixel structuring element is the classical
 training-free remedy and essentially what the ``close gap'' option of drawing software
 does. Finally, the joint gap detection and inpainting network of Sasaki et
@@ -259,7 +284,7 @@ weights, which we converted to PyTorch, and retrained from scratch on our traini
 data with the same augmentation as our model, following the original training
 recipe. All methods are evaluated on the same 1,000 test drawings with the same code.
 To check that differences are not due to chance, we use a paired bootstrap over the
-test images.
+test images (1,000 resamples).
 
 \section{RESULTS}
 
@@ -322,11 +347,12 @@ to 19.4 per image, more than in the unrestored input. The reason is that this ne
 regenerates every stroke instead of copying the input where it is intact: it keeps
 only 94.1\% of the input ink, thin strokes are partly lost, and every weakened stroke
 opens a new gap. Since this variant uses the same data and augmentation as ours, the
-difference, 49.7 percentage points in gap closure and 58.4 in bucket accuracy,
-reflects the architecture and training objective. We attribute it to the skip
-connections and gated convolutions, which let intact strokes pass through unchanged,
-and to the attention modules and gap-focused loss, which focus the network's capacity
-on the gaps.
+difference, 49.7 percentage points in gap closure and 58.4 in bucket accuracy
+(computed from unrounded values),
+reflects the architecture and training objective. The skip connections and gated
+convolutions let intact strokes pass through unchanged, and the gap-focused loss
+concentrates training on the gaps; the ablation study below quantifies the
+contribution of each component.
 
 \begin{figure*}
 \centerline{\includegraphics[width=\textwidth]{figures/fig_qualitative_zoom_all.pdf}}
@@ -343,8 +369,9 @@ Morphological closing only handles gaps shorter than its structuring element, an
 practically none above 16 pixels. The Sasaki et al.\ network closes at most 43\% of
 the gaps in any length range. InkCloser closes between 76.6\% and 80.0\% of the gaps
 in every range from 8 pixels upwards, including 12 of the 15 gaps longer than 64
-pixels, which is consistent with the image-wide context provided by its attention
-modules. Its closure rate is lowest, 44.5\%, for gaps under 8 pixels, although it is
+pixels. The ablation study below shows that this does not depend on the bottleneck
+attention: a variant without it closes more gaps in every range from 8 to 64
+pixels. Its closure rate is lowest, 44.5\%, for gaps under 8 pixels, although it is
 still the best of all methods there. We believe this is largely an effect of the
 closure criterion: for a gap of a few pixels, a completion that is one pixel thinner
 or offset fails to cover 80\% of it, whereas the same error is negligible for a long
@@ -353,7 +380,8 @@ gap.
 \begin{figure}
 \centerline{\includegraphics[width=\columnwidth]{figures/fig_gap_closure_by_length_all.pdf}}
 \caption{Fraction of gaps closed by each method as a function of gap length (longer
-side of the gap's bounding box). The last bin contains only 15 gaps.}
+side of the gap's bounding box, a proxy for its spatial extent rather than the length
+of the missing stroke). The last bin contains only 15 gaps.}
 \label{fig:gaplength}
 \end{figure}
 
@@ -368,11 +396,135 @@ close, nearly parallel strokes or fine hatching are also harder: some strokes ar
 completed only partially. Even then, InkCloser does not produce the ink blobs that
 closing creates.
 
-\textbf{Speed.} Restoring one $896\times 896$ drawing takes 92 ms in half precision
-on an NVIDIA T4 GPU, with 1.24 GB of peak GPU memory. This is roughly an order of
+\textbf{Speed.} Restoring one $896\times 896$ drawing takes 92 ms on an NVIDIA T4
+GPU, with 1.24 GB of peak allocated GPU memory (batch of one, mean of 50 forward
+passes after 10 warm-up passes). The network runs in half precision, except for the
+transformer blocks, which run in single precision for numerical stability. This is roughly an order of
 magnitude more than the much smaller Sasaki et al.\ network, but fast enough for an
 interactive preprocessing step before coloring, and small compared with the cost of
 repairing gaps by hand.
+
+\section{ABLATION STUDY}
+
+To assess the contribution of the individual components of InkCloser, we compared
+the full model with six variants, evaluated with the same metrics on the same 1,000
+test drawings. Each variant removes one component, or several, from the full model:
+\emph{w/o 28$\times$28 attention} removes the six bottleneck transformer blocks, so
+that the bottleneck features go directly to the decoder; \emph{w/o 56$\times$56
+branch} removes the dilated residual stack and the three transformer blocks on the
+$56\times 56$ skip connection; \emph{w/o gated conv} replaces every gated
+convolution of the encoder with a standard convolution of the same size;
+\emph{w/o local Dice} removes the third loss term; \emph{plain U-Net + our loss} is
+the U-Net alone, with standard convolutions and without either context module,
+trained with the full loss; and \emph{plain U-Net + BCE} is the same network trained
+with an unweighted cross-entropy only. Removed modules are replaced by the identity,
+so the rest of the network is unchanged.
+
+To keep the cost of the study manageable, the full model and all variants except
+the first are trained for one epoch instead of five, with the same optimizer,
+learning-rate schedule, augmentation, and random seed. Their absolute values in
+Table~\ref{tab:ablation} are therefore lower than those of the reported model
+(Table~\ref{tab:results}), and only the differences between variants trained under
+the same budget are meaningful. The variant without bottleneck attention is instead
+compared with the full model at the training length of the reported model, because
+one epoch is not enough for this comparison, as discussed below. Differences are
+tested with the same paired bootstrap as in the main results.
+
+\begin{table*}
+\caption{Ablation study on the 1,000 test drawings (percentages, except the number
+of parameters and the leaks per image). Top: variants trained for one epoch. Bottom:
+full model and variant without bottleneck attention, both retrained for the training
+length of the reported model. Fill F1 (2 px): fill F1 with a two-pixel tolerance.
+Each value is followed by half the width of its 95\% bootstrap confidence interval.
+Best value of each column within each group in bold.}
+\label{tab:ablation}
+\tablefont
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lccccccc@{}}
+\toprule
+Variant & \shortstack{Params\\(M)} & \shortstack{Fill\\F1} & \shortstack{Fill F1\\(2 px)} & \shortstack{Gap\\closure} & \shortstack{Bucket\\acc.} & \shortstack{Leaks/\\image} & \shortstack{Leak-\\free} \\
+\midrule
+\multicolumn{8}{@{}l}{\emph{One epoch}} \\
+InkCloser (full) & 43.4 & \textbf{76.6}{\scriptsize$\pm$0.7} & 91.5{\scriptsize$\pm$0.5} & \textbf{42.2}{\scriptsize$\pm$1.0} & 90.0{\scriptsize$\pm$0.7} & 3.49{\scriptsize$\pm$0.30} & \textbf{26.9}{\scriptsize$\pm$2.8} \\
+w/o 56$\times$56 branch & 35.1 & 76.3{\scriptsize$\pm$0.7} & \textbf{91.8}{\scriptsize$\pm$0.5} & 38.8{\scriptsize$\pm$0.9} & \textbf{90.5}{\scriptsize$\pm$0.6} & \textbf{3.31}{\scriptsize$\pm$0.28} & 26.4{\scriptsize$\pm$2.7} \\
+w/o gated conv & 37.4 & 69.5{\scriptsize$\pm$0.8} & 86.3{\scriptsize$\pm$0.6} & 41.2{\scriptsize$\pm$1.0} & 87.5{\scriptsize$\pm$0.8} & 4.26{\scriptsize$\pm$0.36} & 21.2{\scriptsize$\pm$2.5} \\
+w/o local Dice & 43.4 & 71.6{\scriptsize$\pm$0.9} & 87.4{\scriptsize$\pm$0.7} & 31.0{\scriptsize$\pm$1.0} & 85.0{\scriptsize$\pm$0.9} & 5.60{\scriptsize$\pm$0.44} & 14.7{\scriptsize$\pm$2.2} \\
+Plain U-Net + our loss & 10.2 & 67.9{\scriptsize$\pm$0.8} & 85.9{\scriptsize$\pm$0.6} & 27.3{\scriptsize$\pm$0.8} & 84.8{\scriptsize$\pm$0.9} & 5.52{\scriptsize$\pm$0.42} & 11.5{\scriptsize$\pm$1.9} \\
+Plain U-Net + BCE & 10.2 & 66.1{\scriptsize$\pm$0.9} & 85.5{\scriptsize$\pm$0.7} & 18.6{\scriptsize$\pm$0.9} & 77.8{\scriptsize$\pm$1.2} & 8.71{\scriptsize$\pm$0.76} & 10.4{\scriptsize$\pm$1.8} \\
+\midrule
+\multicolumn{8}{@{}l}{\emph{Training length of the reported model}} \\
+InkCloser (full) & 43.4 & \textbf{80.9}{\scriptsize$\pm$0.6} & \textbf{94.1}{\scriptsize$\pm$0.4} & 59.1{\scriptsize$\pm$1.2} & \textbf{94.2}{\scriptsize$\pm$0.4} & \textbf{1.81}{\scriptsize$\pm$0.18} & \textbf{42.4}{\scriptsize$\pm$3.0} \\
+w/o 28$\times$28 attention & 24.4 & 80.2{\scriptsize$\pm$0.6} & 93.7{\scriptsize$\pm$0.4} & \textbf{62.6}{\scriptsize$\pm$1.0} & 94.0{\scriptsize$\pm$0.4} & 1.88{\scriptsize$\pm$0.18} & 41.2{\scriptsize$\pm$2.9} \\
+\bottomrule
+\end{tabular*}
+\end{table*}
+
+\textbf{Loss function.} The local Dice term is the component whose removal has the
+largest effect. Without it, gap closure drops from 42.2\% to 31.0\% (11.2 percentage
+points, 95\% CI [10.6, 11.8]), bucket accuracy from 90.0\% to 85.0\%, and the share of
+leak-free drawings from 26.9\% to 14.7\%, while the number of leaks per image rises
+from 3.49 to 5.60. Fill F1 also decreases by 5.0 points. This is consistent with the
+motivation of the term: the global loss terms are dominated by the intact parts of
+the drawing, and the local term adds a training signal that is specific to the
+completed regions. The loss also matters without the context modules: on the plain
+U-Net, replacing the unweighted cross-entropy with our loss raises gap closure from
+18.6\% to 27.3\% and bucket accuracy from 77.8\% to 84.8\%, and lowers the number of
+leaks per image from 8.71 to 5.52.
+
+\textbf{Gated convolutions.} Replacing the gated convolutions with standard ones
+reduces fill F1 by 7.1 points (from 76.6\% to 69.5\%), and by 5.2 points with the
+two-pixel tolerance, bucket accuracy by 2.5 points, and the share of leak-free
+drawings by 5.7 points ($p \le 0.001$ for fill F1, bucket accuracy, and leak-free
+drawings). Gap closure decreases less, by 1.0 point (95\% CI [0.4, 1.7]). The
+variant without gates thus closes almost as many gaps, but the ink it adds is less
+accurate. We attribute this to the role of the gates in separating reliable input
+from the gaps, which lets the network copy intact strokes and place new ink more
+precisely; this interpretation is consistent with, but not proven by, these results.
+
+\textbf{Context modules.} Removing the $56\times 56$ branch reduces gap closure by
+3.4 points (95\% CI [2.8, 4.0]), while the other metrics stay close to those of the
+full model, which suggests that the branch mainly helps the network complete gaps
+rather than reproduce the rest of the drawing. The bottleneck attention is not
+included in the one-epoch comparison. Its six transformer blocks account for almost
+half of the parameters of the model (19 of 43.4 million), and one epoch is not
+enough to assess them: at that budget, the variant without them obtained a higher
+bucket accuracy and more leak-free drawings than the full model, and both
+differences reversed or disappeared when the two models were trained for longer. We
+therefore compare these two configurations at the training length of the reported
+model, below.
+
+\textbf{Architecture as a whole.} Taken together, the components of InkCloser
+improve every metric of the plain U-Net trained with the same loss: gap closure
+rises from 27.3\% to 42.2\%, fill F1 from 67.9\% to 76.6\%, bucket accuracy from
+84.8\% to 90.0\%, and the share of leak-free drawings from 11.5\% to 26.9\%
+($p \le 0.001$ for all four). Relative to the plain U-Net trained with
+cross-entropy, the combination of our architecture and loss more than doubles gap
+closure (from 18.6\% to 42.2\%) under the same budget. The reported model, trained
+five times longer, reaches a much higher gap closure (70.5\%) than the full model
+trained for one epoch (42.2\%), while its fill F1 with the two-pixel tolerance
+differs by only 1.3 points. This suggests that the structural metrics benefit most
+from longer training, and that the ranking of the variants could change under the
+full schedule, in particular for components whose effect at one epoch is small.
+
+\textbf{Bottleneck attention.} The bottom of Table~\ref{tab:ablation} compares the
+full model and the variant without bottleneck attention, both retrained for the
+training length of the reported model with the settings and random seed of the
+one-epoch study. The full model is better in fill F1 (+0.7 points, 95\% CI [0.4,
+1.0]) and, by a small margin, in bucket accuracy (+0.2 points, 95\% CI [0.04, 0.4]),
+and the two models do not differ significantly in leak-free drawings (+1.2 points,
+95\% CI [$-0.8$, 3.2]). The variant without bottleneck attention, however, closes
+more gaps (+3.6 points, 95\% CI [3.1, 4.2]), as it already did at one epoch; it
+closes more gaps in every length range from 8 to 64 pixels, with the largest
+difference (7.5 points) for gaps between 32 and 64 pixels. In our runs, the
+bottleneck attention thus slightly improves the precision of the added ink but does
+not help the model close gaps, while it accounts for 19 of the 43.4 million
+parameters. Both retrained models also close fewer gaps than the reported model
+(59.1\% and 62.6\%, against 70.5\% in Table~\ref{tab:results}), although the
+retrained full model has a higher fill F1 (80.9\% against 78.5\%). The retrained full
+model and the reported model have the same architecture, loss, and training length
+and come from different training runs, which suggests that gap closure varies
+considerably from one run to another. We have not measured this variance, which
+would require several training runs per configuration, and the difference between
+the two configurations should be read with this in mind.
 
 \section{LESSONS AND LIMITATIONS}
 
@@ -383,8 +535,8 @@ it weakens elsewhere becomes a new gap. For a paint-bucket workflow, preserving 
 input exactly outside the gaps is as important as filling them, and evaluation should
 count leaks and fillable regions rather than pixels.
 
-Several limitations remain. Although InkCloser separates 94.0\% of the regions merged
-by gaps, a single remaining gap is enough to spoil a fill, and 55\% of the restored
+Several limitations remain. Although InkCloser separates again 94.0\% of the regions merged
+by gaps (counting regions, without checking their shape as bucket accuracy does), a single remaining gap is enough to spoil a fill, and 55\% of the restored
 drawings still contain at least one leak. From an artist's point of view, however,
 the remaining work drops from about 15 corrections per drawing to one or two in most
 cases. Weighting the loss towards gaps that actually merge regions, and improving the
@@ -402,8 +554,9 @@ InkCloser restores broken lines in line art so that a standard paint-bucket tool
 color the result with single clicks. It finds and closes gaps without being told
 where they are, and it leaves the rest of the drawing untouched. On 1,000 test
 drawings, it closes 70.5\% of the gaps, makes 94.7\% of the regions fillable with one
-click, and turns 45\% of the drawings into leak-free line art, while neither
-morphological closing nor a prior learned approach improves on the unrestored input.
+click, and turns 45\% of the drawings into leak-free line art, while both
+morphological closing and a prior learned approach lower the fraction of fillable
+regions of the unrestored input.
 The code, trained model, and dataset are publicly
 available~\cite{codeInkCloser,datasetInkCloser}, and we hope they will help make gap
 repair an automatic step in digital coloring pipelines.

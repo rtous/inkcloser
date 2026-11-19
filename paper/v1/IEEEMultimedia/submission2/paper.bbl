@@ -21,13 +21,18 @@
 \providecommand{\BIBdecl}{\relax}
 \BIBdecl
 
+\bibitem{sasaki2017joint}
+K.~Sasaki, S.~Iizuka, E.~Simo-Serra, and H.~Ishikawa, ``Joint gap detection and
+  inpainting of line drawings,'' in \emph{IEEE Conference on Computer Vision
+  and Pattern Recognition (CVPR)}, 2017, pp. 5725--5733.
+
 \bibitem{datasetInkCloser}
 R.~Tous, ``{InkCloser Dataset},''
   \url{https://drive.google.com/file/d/1NO8i_J5mSlh7YYuwh2ZyFqkIW7ISrGuk/view?usp=drive_link},
   2026, accessed: 2026-10-06.
 
 \bibitem{codeInkCloser}
-------, ``{InkCloser: Line-Art Completion for Paint-Bucket Colorization --
+R.~Tous, ``{InkCloser: Line-Art Completion for Paint-Bucket Colorization --
   Source Code and Pretrained Weights},''
   \url{https://github.com/rtous/inkcloser}, 2026, accessed: 2026-10-08.
 
@@ -76,25 +81,21 @@ A.~D. Parakkat, P.~Memari, and M.-P. Cani, ``Delaunay painting: Perceptual
   image colouring from raster contours with gaps,'' \emph{Computer Graphics
   Forum}, vol.~41, no.~6, pp. 166--181, 2022.
 
+\bibitem{allen2024leak}
+B.~Allen, A.~Maejima, and K.~Anjyo, ``Fast leak-resistant segmentation for
+  anime line art,'' in \emph{SIGGRAPH Asia 2024 Technical Communications},
+  2024, pp. 1--4.
+
+\bibitem{asrin2025gap}
+S.~M. Asrin, Z.~Zainuddin, and I.~Nurtanio, ``Deterministic robust gap-closing
+  for animation line-art colorization,'' in \emph{5th International Conference
+  of Science and Information Technology in Smart Administration (ICSINTESA)},
+  2025, pp. 61--66.
+
 \bibitem{kono2026gapfill}
 M.~Kono, A.~Maejima, Y.~Koyama, Y.~Sechayk, and T.~Igarashi, ``No pixel left
   behind: Filling gaps in anime colorization,'' in \emph{Proceedings of the CHI
   Conference on Human Factors in Computing Systems (CHI)}, 2026.
-
-\bibitem{sasaki2017joint}
-K.~Sasaki, S.~Iizuka, E.~Simo-Serra, and H.~Ishikawa, ``Joint gap detection and
-  inpainting of line drawings,'' in \emph{IEEE Conference on Computer Vision
-  and Pattern Recognition (CVPR)}, 2017, pp. 5725--5733.
-
-\bibitem{simoserra2016simplify}
-E.~Simo-Serra, S.~Iizuka, K.~Sasaki, and H.~Ishikawa, ``Learning to simplify:
-  Fully convolutional networks for rough sketch cleanup,'' \emph{ACM
-  Transactions on Graphics}, vol.~35, no.~4, pp. 1--11, 2016.
-
-\bibitem{casey2021animation}
-E.~Casey, V.~P{\'e}rez, and Z.~Li, ``The animation transformer: Visual
-  correspondence via segment matching,'' in \emph{IEEE/CVF International
-  Conference on Computer Vision (ICCV)}, 2021.
 
 \bibitem{dai2024inclusion}
 Y.~Dai, S.~Zhou, Q.~Li, C.~Li, and C.~C. Loy, ``Learning inclusion matching for
