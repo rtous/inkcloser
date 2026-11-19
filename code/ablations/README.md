@@ -107,6 +107,9 @@ Paired bootstrap against `full` (1,000 resamples, `paired_bootstrap_vs_baselines
 
 `full` and `no_attn28` retrained for 9,155 steps (167 and 139 min on a T4), 1,000 test
 images, tables in `paper/v1/results_ablations_9155/`.
+In the paper: Table `tab:ablation_long` and the paragraph "Bottleneck attention under
+longer training" at the end of the Ablation Study section (the paper gives no step count;
+see `paper/v1/HIDDEN_ISSUES.txt`, D.12b).
 
 | Variant | Params | Fill F1 τ=0 | Fill F1 τ=2 | Gap closure | Bucket acc. | Leaks/img ↓ | Leak-free | ms/img |
 |---|---|---|---|---|---|---|---|---|

@@ -791,8 +791,9 @@ this result, neither of which we have tested: the variant without bottleneck
 attention still has access to image-wide context through the transformer blocks of
 the $56\times 56$ branch, and the six bottleneck transformer blocks, which account for
 almost half of the parameters of the model (19\,M of 43.4\,M), may need a longer
-schedule than one epoch to contribute. A comparison of the two configurations under
-the full training schedule is left for future work.
+schedule than one epoch to contribute. To test the second factor, we retrained both
+configurations for the training length of the reported model; these results are
+discussed at the end of this section.
 
 \paragraph{Architecture as a whole.} Taken together, the components of InkCloser
 improve every metric of the plain U-Net trained with the same loss: gap closure rises
@@ -806,6 +807,53 @@ at $\tau=2$ differs by only 1.3 points; this suggests that the structural metric
 benefit most from longer training, and that the ranking of the variants could change
 under the full schedule, in particular for components whose effect at one epoch is
 small.
+
+\begin{table}[t]
+\centering
+\caption{Bottleneck attention under the training length of the reported model. The
+full model and the variant without the $28\times 28$ bottleneck attention are retrained
+for the same number of iterations as the reported model, with the settings and random
+seed of Table~\ref{tab:ablation}, and evaluated on the same 1\,000 test images. The
+last row is the reported model, as in Table~\ref{tab:ablation}. Values are percentages
+unless noted; $\pm$ is half the width of the 95\% bootstrap confidence interval. Best
+value among the two retrained models in bold.}
+\label{tab:ablation_long}
+\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccccccc}
+\toprule
+Variant & \shortstack{Params\\(M)} & \shortstack{Fill F1\\($\tau$=0) $\uparrow$} & \shortstack{Fill F1\\($\tau$=2) $\uparrow$} & \shortstack{Gap\\closure $\uparrow$} & \shortstack{Bucket\\acc. $\uparrow$} & \shortstack{Leaks /\\image $\downarrow$} & \shortstack{Leak-free\\images $\uparrow$} \\
+\midrule
+InkCloser (full, retrained) & 43.4 & \textbf{80.9}{\scriptsize$\pm$0.6} & \textbf{94.1}{\scriptsize$\pm$0.4} & 59.1{\scriptsize$\pm$1.2} & \textbf{94.2}{\scriptsize$\pm$0.4} & \textbf{1.81}{\scriptsize$\pm$0.18} & \textbf{42.4}{\scriptsize$\pm$3.0} \\
+w/o 28$\times$28 attention & 24.4 & 80.2{\scriptsize$\pm$0.6} & 93.7{\scriptsize$\pm$0.4} & \textbf{62.6}{\scriptsize$\pm$1.0} & 94.0{\scriptsize$\pm$0.4} & 1.88{\scriptsize$\pm$0.18} & 41.2{\scriptsize$\pm$2.9} \\
+\midrule
+\emph{InkCloser (reported)} & 43.4 & 78.5{\scriptsize$\pm$0.7} & 92.8{\scriptsize$\pm$0.5} & 70.5{\scriptsize$\pm$0.9} & 94.7{\scriptsize$\pm$0.4} & 1.47{\scriptsize$\pm$0.14} & 45.0{\scriptsize$\pm$3.0} \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\paragraph{Bottleneck attention under longer training.} Because the one-epoch result
+for the bottleneck attention was the only one that ran against the design of the
+model, we repeated this comparison, and only this one, at the training length of the
+reported model (Table~\ref{tab:ablation_long}). With longer training, the full model is
+better than the variant without bottleneck attention in fill F1 at $\tau=0$ (+0.7
+points, 95\% CI [0.4, 1.0]) and, by a small margin, in bucket accuracy (+0.2 points,
+95\% CI [0.04, 0.4]), and the difference in leak-free images is no longer significant
+(+1.2 points, 95\% CI [$-0.8$, 3.2]). The variant without bottleneck attention, however,
+still closes more gaps, and the difference grows from 1.9 to 3.6 points (95\% CI
+[3.1, 4.2]); it closes more gaps in every length bin from 8 to 64 pixels, with the
+largest difference (7.5 points) for gaps between 32 and 64 pixels. Longer training thus
+accounts for part of the one-epoch result, but not for the difference in gap closure:
+in our runs, the bottleneck attention slightly improves the precision of the added ink
+but does not help the model close gaps, while it accounts for 19\,M of the 43.4\,M
+parameters. Both retrained models also close fewer gaps than the reported model
+(59.1\% and 62.6\%, against 70.5\%), although the retrained full model has a higher
+fill F1 (80.9\% against 78.5\%). The retrained full model and the reported model have
+the same architecture, loss, and training length and come from different training
+runs, which suggests that gap closure varies considerably from one run to another. We
+have not measured this variance, which would require several training runs per
+configuration, and the difference between the two configurations should be read with
+this in mind.
 
 \section{Discussion and Future Work}
 \label{sec:discussion}
